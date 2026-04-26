@@ -1,0 +1,2533 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>POLYU-Peng's Lab: Pitch Sensitivity Training</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+        .training-info {
+            font-size: 16px;
+            color: #555;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .instruction-text {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 15px;
+            text-align: center;
+            font-style: italic;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            width: 100%;
+        }
+        .prompt-text {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 25px;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+        .response-button {
+            width: 160px;
+            height: 160px;
+            font-size: 26px;
+            margin: 0 40px;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .response-button:hover:enabled {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .response-button:active:enabled {
+            transform: translateY(1px);
+        }
+        .button-playing {
+            animation: pulse 1s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(102, 204, 255, 0.8);
+            transform: scale(1.05);
+        }
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(102, 204, 255, 0.8);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(102, 204, 255, 1);
+            }
+        }
+        .control-button-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+            width: 100%;
+        }
+        .control-button {
+            padding: 14px 28px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .control-button:hover:enabled {
+            background-color: #3e8e41;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .control-button:active:enabled {
+            transform: translateY(1px);
+        }
+        .control-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .feedback {
+            text-align: center;
+            height: 100px;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .status {
+            width: 350px;
+            height: 68px;
+            text-align: center;
+            font-size: 18px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .debug-info {
+            font-size: 12px;
+            color: #777;
+            margin-top: 30px;
+            text-align: left;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            width: 100%;
+        }
+        .results-container {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+        .result-heading {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .result-table th, .result-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .result-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        .result-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .result-interpretation {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .back-button {
+            display: block;
+            margin: 0 auto;
+            padding: 14px 28px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .back-button:active {
+            transform: translateY(1px);
+        }
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .auxiliary-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .auxiliary-buttons button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .auxiliary-buttons button:hover {
+            background-color: #e0e0e0;
+        }
+        .diagnostic-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        .diagnostic-content {
+            width: 80%;
+            max-width: 700px;
+            max-height: 80%;
+            overflow-y: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        .diagnostic-heading {
+            text-align: center;
+            color: #e74c3c;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .diagnostic-close {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+            color: #777;
+        }
+        .diagnostic-close:hover {
+            color: #333;
+        }
+        .diagnostic-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .diagnostic-actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .diagnostic-action-button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .retry-button {
+            background-color: #3498db;
+            color: white;
+        }
+        .retry-button:hover {
+            background-color: #2980b9;
+        }
+        .continue-button {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .continue-button:hover {
+            background-color: #27ae60;
+        }
+        .diagnostic-file-check {
+            margin: 20px 0;
+        }
+        .diagnostic-file-status {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .file-status-item {
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            background-color: #f8f8f8;
+        }
+        .file-found {
+            color: #27ae60;
+            border-left: 3px solid #27ae60;
+        }
+        .file-missing {
+            color: #e74c3c;
+            border-left: 3px solid #e74c3c;
+        }
+        .statistics-table {
+            width: 100%;
+            margin: 10px 0;
+            border-collapse: collapse;
+        }
+        .statistics-table th, .statistics-table td {
+            padding: 8px;
+            text-align:center;
+            border: 1px solid #ddd;
+        }
+        .statistics-table th {
+            background-color: #f0f0f0;
+        }
+        .direction-stats-good {
+            color: #27ae60;
+        }
+        .direction-stats-warning {
+            color: #f39c12;
+        }
+        .direction-stats-bad {
+            color: #e74c3c;
+        }
+        /* 平板适配 */
+        @media (max-width: 768px) {
+            body {
+                margin: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .header img {
+                max-width: 100%;
+                height: auto;
+            }
+            .response-button {
+                width: 140px;
+                height: 140px;
+                font-size: 24px;
+                margin: 0 25px;
+            }
+            .status {
+                width: 90%;
+                max-width: 350px;
+            }
+            .result-table {
+                font-size: 14px;
+            }
+            .result-table th, .result-table td {
+                padding: 8px 6px;
+            }
+        }
+        
+        /* 手机适配 - 适合老年人阅读的大字体 */
+        @media (max-width: 600px) {
+            body {
+                margin: 5px;
+                font-size: 20px;
+            }
+            .container {
+                padding: 12px;
+                border-radius: 8px;
+            }
+            .header {
+                margin-bottom: 20px;
+            }
+            .header img {
+                max-width: 100%;
+                height: auto;
+            }
+            .training-info {
+                font-size: 20px;
+                line-height: 1.5;
+            }
+            .instruction-text {
+                font-size: 18px;
+                line-height: 1.5;
+            }
+            .prompt-text {
+                font-size: 24px;
+                margin-top: 20px;
+                margin-bottom: 15px;
+                line-height: 1.4;
+            }
+            .response-button {
+                width: 120px;
+                height: 120px;
+                font-size: 24px;
+                margin: 0 10px;
+            }
+            .control-button-container {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+            .control-button {
+                padding: 14px 28px;
+                font-size: 22px;
+                width: 85%;
+                max-width: 220px;
+            }
+            .feedback {
+                height: 80px;
+                margin: 20px 0;
+            }
+            .feedback img {
+                width: 80px;
+                height: auto;
+            }
+            .status {
+                width: 95%;
+                max-width: 100%;
+                height: auto;
+                min-height: 50px;
+                font-size: 22px;
+                padding: 10px;
+                line-height: 1.4;
+            }
+            .retry-counter {
+                font-size: 18px;
+            }
+            .auxiliary-buttons {
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+            }
+            .auxiliary-buttons button {
+                width: 100%;
+                padding: 14px 18px;
+                font-size: 20px;
+            }
+            .auxiliary-buttons label {
+                width: 100%;
+                text-align: center;
+                font-size: 20px;
+            }
+            .results-container {
+                padding: 15px;
+            }
+            .result-heading {
+                font-size: 24px;
+            }
+            .result-table {
+                font-size: 18px;
+            }
+            .result-table th, .result-table td {
+                padding: 8px 6px;
+            }
+            .result-interpretation {
+                padding: 12px;
+                font-size: 20px;
+                line-height: 1.5;
+            }
+            .back-button, .print-button {
+                width: 85%;
+                max-width: 220px;
+                padding: 14px 24px;
+                font-size: 22px;
+            }
+            .diagnostic-content {
+                width: 95%;
+                max-height: 90%;
+                padding: 15px;
+            }
+            .diagnostic-heading {
+                font-size: 26px;
+            }
+            .statistics-table {
+                font-size: 18px;
+            }
+            .statistics-table th, .statistics-table td {
+                padding: 8px 6px;
+            }
+            .progress-bar-container {
+                height: 18px;
+            }
+            .progress-label {
+                font-size: 18px;
+            }
+            .chart-container {
+                height: 200px;
+            }
+        }
+        
+        /* 超小屏幕适配 */
+        @media (max-width: 400px) {
+            .response-button {
+                width: 90px;
+                height: 90px;
+                font-size: 16px;
+                margin: 0 8px;
+            }
+            .prompt-text {
+                font-size: 16px;
+            }
+            .result-table {
+                font-size: 11px;
+            }
+            .result-table th, .result-table td {
+                padding: 4px 2px;
+            }
+        }
+        .print-button {
+            padding: 14px 28px;
+            margin: 20px auto;
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            display: block;
+        }
+        .print-button:hover {
+            background-color: #8e44ad;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .print-button:active {
+            transform: translateY(1px);
+        }
+        @media print {
+            body {
+                background-color: white;
+                margin: 0;
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+                box-shadow: none;
+                padding: 10px;
+            }
+            .back-button, .print-button, .auxiliary-buttons {
+                display: none;
+            }
+            .results-container {
+                display: block !important;
+                box-shadow: none;
+                background-color: white;
+                padding: 0;
+            }
+            .chart-container {
+                border: 1px solid #ddd;
+                background-color: white;
+            }
+            .result-table th {
+                background-color: #f0f0f0 !important;
+                color: black !important;
+            }
+            .result-interpretation {
+                background-color: white;
+                border: 1px solid #ddd;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .progress-label {
+            text-align: center;
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .retry-counter {
+            text-align: center;
+            font-size: 14px;
+            color: #e74c3c;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .experiment-progress {
+            text-align: center;
+            font-size: 16px;
+            color: #2c3e50;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+            display: inline-block;
+            font-weight: 600;
+        }
+        .experiment-progress span {
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+    
+    <!-- EmailJS Library -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <!-- Email Configuration and Service -->
+    <script src="js/emailConfig.js"></script>
+    <script src="js/emailService.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="Media/animation.gif" alt="Experiment animation">
+            <div class="training-info">Level Tone Discrimination (ABX)</div>
+            <div id="experimentProgress" class="experiment-progress" style="display: none;">
+                實驗進度: <span id="progressText">1/3</span>
+            </div>
+            <div class="instruction-text">請判斷第三個音聽起來更像第一個還是第二個音</div>
+        </div>
+
+        <div id="experimentContainer">
+            <div class="control-button-container">
+                <input id="start" type="button" value="開始實驗" onclick="start_onclick()" class="control-button">
+                <input id="viewResult" type="button" value="查看結果" onclick="view_onclick()" class="control-button" disabled>
+            </div>
+
+            <div class="prompt-text" id="promptText">
+                第三個音更像...
+            </div>
+            
+            <div class="button-container">
+                <input id="firstBtn" type="button" value="第一個音" onclick="processAnswer(1)" disabled 
+                    class="response-button" style="background:#FF6666;">
+                <input id="secondBtn" type="button" value="第二個音" onclick="processAnswer(2)" disabled 
+                    class="response-button" style="background:#FF6666;">
+            </div>
+
+            <div class="feedback">
+                <img id="smile" src="Media/null.gif" width="100" height="84" alt="Feedback">
+            </div>
+            
+            <div class="button-container">
+                <input id="text1" class="status" readonly>
+            </div>
+            
+            <div id="retryCounter" class="retry-counter" style="display: none;"></div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="progress-label" id="progressLabel">Progress: 0%</div>
+            
+            <div class="debug-info" id="debugInfo">
+                Debug information will be displayed here
+            </div>
+            
+            <div class="auxiliary-buttons">
+                <label><input type="checkbox" id="showDebug" onclick="toggleDebug()"> Show Debug Info</label>
+                <button onclick="testAudio()">Test All Audio</button>
+                <button onclick="showDiagnostics()">Diagnostics</button>
+                <button onclick="exportToCSV()" id="exportBtn">Export Data (CSV)</button>
+                <button onclick="testEmailSending()" id="testEmailBtn">測試郵件發送</button>
+            </div>
+        </div>
+        
+        <div id="resultsContainer" class="results-container">
+            <h2 class="result-heading">Pitch Discrimination Test Results (ABX)</h2>
+            
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>Test Direction</th>
+                        <th>Threshold (semitones)</th>
+                        <th>Std. Deviation</th>
+                        <th>Assessment</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTableBody">
+                </tbody>
+            </table>
+            
+            <div class="result-interpretation" id="resultInterpretation">
+            </div>
+            
+            <h3>Reaction Time Statistics</h3>
+            <table class="result-table" id="rtStatsTable">
+                <thead>
+                    <tr>
+                        <th>Direction</th>
+                        <th>Mean RT (ms)</th>
+                        <th>Median RT (ms)</th>
+                        <th>RT Std. Deviation</th>
+                    </tr>
+                </thead>
+                <tbody id="rtStatsTableBody">
+                </tbody>
+            </table>
+            
+            <h3>Accuracy Statistics</h3>
+            <table class="result-table" id="accuracyStatsTable">
+                <thead>
+                    <tr>
+                        <th>Direction</th>
+                        <th>Correct Responses</th>
+                        <th>Total Responses</th>
+                        <th>Accuracy</th>
+                    </tr>
+                </thead>
+                <tbody id="accuracyStatsTableBody">
+                </tbody>
+            </table>
+            
+            <div class="chart-container" id="resultChart">
+            </div>
+            
+            <button class="print-button" onclick="printResults()">Print Results</button>
+            
+            <div class="auxiliary-buttons" style="margin-top: 20px;">
+                <button onclick="exportToCSV()">Export Data (CSV)</button>
+            </div>
+            
+            <button class="back-button" onclick="backToExperiment()">Back to Experiment</button>
+        </div>
+        
+        <div class="diagnostic-overlay" id="diagnosticOverlay">
+            <div class="diagnostic-content">
+                <span class="diagnostic-close" onclick="closeDiagnostics()">&times;</span>
+                <h2 class="diagnostic-heading">Experiment Diagnostics</h2>
+                
+                <div class="diagnostic-section">
+                    <h3>Test Status</h3>
+                    <table class="statistics-table">
+                        <tr>
+                            <th>Direction</th>
+                            <th>Trials</th>
+                            <th>Reversals</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr>
+                            <td>Higher Direction</td>
+                            <td id="higherTrials">0</td>
+                            <td id="higherReversals">0</td>
+                            <td id="higherStatus">Not started</td>
+                        </tr>
+                        <tr>
+                            <td>Lower Direction</td>
+                            <td id="lowerTrials">0</td>
+                            <td id="lowerReversals">0</td>
+                            <td id="lowerStatus">Not started</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="diagnostic-section">
+                    <h3>Audio Files Check</h3>
+                    <p>Verifying necessary audio files:</p>
+                    <div id="audioFileStatus" class="diagnostic-file-status">
+                    </div>
+                </div>
+                
+                <div class="diagnostic-section">
+                    <h3>Reversal History</h3>
+                    <div id="reversalHistory">
+                    </div>
+                </div>
+                
+                <div class="diagnostic-section">
+                    <h3>Recommendations</h3>
+                    <div id="diagnosticRecommendations">
+                    </div>
+                </div>
+                
+                <div class="diagnostic-actions">
+                    <button class="diagnostic-action-button retry-button" onclick="retryIncompleteDirection()">Retry Incomplete Direction</button>
+                    <button class="diagnostic-action-button continue-button" onclick="closeDiagnostics()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Standard tone -->
+    <audio id="standard" src="Media/level_standard.wav" preload="auto"></audio>
+
+    <!-- Higher direction tones (10 levels) -->
+    <audio id="level_1_h" src="Media/level_1_h.wav" preload="auto"></audio>
+    <audio id="level_2_h" src="Media/level_2_h.wav" preload="auto"></audio>
+    <audio id="level_3_h" src="Media/level_3_h.wav" preload="auto"></audio>
+    <audio id="level_4_h" src="Media/level_4_h.wav" preload="auto"></audio>
+    <audio id="level_5_h" src="Media/level_5_h.wav" preload="auto"></audio>
+    <audio id="level_6_h" src="Media/level_6_h.wav" preload="auto"></audio>
+    <audio id="level_7_h" src="Media/level_7_h.wav" preload="auto"></audio>
+    <audio id="level_8_h" src="Media/level_8_h.wav" preload="auto"></audio>
+    <audio id="level_9_h" src="Media/level_9_h.wav" preload="auto"></audio>
+    <audio id="level_10_h" src="Media/level_10_h.wav" preload="auto"></audio>
+
+    <!-- Lower direction tones (10 levels) -->
+    <audio id="level_1_l" src="Media/level_1_l.wav" preload="auto"></audio>
+    <audio id="level_2_l" src="Media/level_2_l.wav" preload="auto"></audio>
+    <audio id="level_3_l" src="Media/level_3_l.wav" preload="auto"></audio>
+    <audio id="level_4_l" src="Media/level_4_l.wav" preload="auto"></audio>
+    <audio id="level_5_l" src="Media/level_5_l.wav" preload="auto"></audio>
+    <audio id="level_6_l" src="Media/level_6_l.wav" preload="auto"></audio>
+    <audio id="level_7_l" src="Media/level_7_l.wav" preload="auto"></audio>
+    <audio id="level_8_l" src="Media/level_8_l.wav" preload="auto"></audio>
+    <audio id="level_9_l" src="Media/level_9_l.wav" preload="auto"></audio>
+    <audio id="level_10_l" src="Media/level_10_l.wav" preload="auto"></audio>
+
+<script>
+function getLocalTimestamp() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+}
+
+// 修改后的实验常量 - 10个难度级别，步长统一为1
+const MAXREVERSALS = 10;
+const MAXITERATIONS = 80;
+const LOWERLIMIT = 1;
+const UPPERLIMIT = 10;
+const DECREASING = -1;
+const INCREASING = 1;
+const MINIMUMREVERSALS = 6;
+const THRESHOLD_REVERSAL_COUNT = 6;
+const FORCEBALANCETHRESHOLD = 5;
+const MAX_RETRY_COUNT = 3;
+
+// Experiment state variables
+var CorrectAnswer;
+var CorrectResponses = [0, 0];
+var Direction = [DECREASING, DECREASING];
+var Reversals = [[], []];
+var NumberOfReversals = [0, 0];
+var currentLevel = [5, 5];
+var numberOfIterations = 0;
+var sentAverage = [0.0, 0.0];
+var sentStdev = [0.0, 0.0];
+var currentStimDirection;
+var isTestComplete = [false, false];
+var audioUnlocked = false;
+var trialsPerDirection = [0, 0];
+var forceDirection = null;
+var directionHistory = [];
+var allFilesPresent = true;
+var trialRecords = [];
+var stimulusEndTime = 0;
+
+// ABX variables
+var standardIsFirst;
+var comparisonSound;
+var standardSound;
+var xSound;
+
+// 重播相关变量
+var isReplayTrial = false;
+var currentRetryCount = 0;
+
+// 邮件发送状态变量（防止重复发送）
+var emailSent = false;
+
+// 更新后的半音值映射（10个级别）
+function mapLevelToSemitone(level) {
+    const semitoneMap = {
+        1: 2.0,
+        2: 1.5,
+        3: 1.0,
+        4: 0.7,
+        5: 0.5,
+        6: 0.3,
+        7: 0.2,
+        8: 0.1,
+        9: 0.05,
+        10: 0.03
+    };
+    return semitoneMap[level] || 0;
+}
+
+function printResults() {
+    window.print();
+}
+
+function logDebug(message) {
+    console.log(message);
+    var debugArea = document.getElementById('debugInfo');
+    var now = new Date();
+    var timeStr = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() + '.' + now.getMilliseconds();
+    debugArea.innerHTML += '<p>[' + timeStr + '] ' + message + '</p>';
+    debugArea.scrollTop = debugArea.scrollHeight;
+}
+
+function toggleDebug() {
+    var debugArea = document.getElementById('debugInfo');
+    var checkbox = document.getElementById('showDebug');
+    debugArea.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function showDiagnostics() {
+    updateDiagnostics();
+    document.getElementById('diagnosticOverlay').style.display = 'flex';
+}
+
+function closeDiagnostics() {
+    document.getElementById('diagnosticOverlay').style.display = 'none';
+}
+
+function updateDiagnostics() {
+    document.getElementById('higherTrials').innerText = trialsPerDirection[0];
+    document.getElementById('lowerTrials').innerText = trialsPerDirection[1];
+    document.getElementById('higherReversals').innerText = NumberOfReversals[0];
+    document.getElementById('lowerReversals').innerText = NumberOfReversals[1];
+    
+    let higherStatus = getDirectionStatus(0);
+    let lowerStatus = getDirectionStatus(1);
+    
+    document.getElementById('higherStatus').innerText = higherStatus.text;
+    document.getElementById('higherStatus').className = `direction-stats-${higherStatus.class}`;
+    document.getElementById('lowerStatus').innerText = lowerStatus.text;
+    document.getElementById('lowerStatus').className = `direction-stats-${lowerStatus.class}`;
+    
+    checkAudioFiles();
+    
+    let reversalHistoryHtml = '<h4>Higher Direction</h4>';
+    if (Reversals[0].length === 0) {
+        reversalHistoryHtml += '<p>No reversals recorded yet</p>';
+    } else {
+        reversalHistoryHtml += '<p>Reversals at difficulty levels: ' + Reversals[0].join(', ') + '</p>';
+        reversalHistoryHtml += '<p>Semitone values: ' + Reversals[0].map(l => mapLevelToSemitone(l).toFixed(2)).join(', ') + '</p>';
+    }
+    
+    reversalHistoryHtml += '<h4>Lower Direction</h4>';
+    if (Reversals[1].length === 0) {
+        reversalHistoryHtml += '<p>No reversals recorded yet</p>';
+    } else {
+        reversalHistoryHtml += '<p>Reversals at difficulty levels: ' + Reversals[1].join(', ') + '</p>';
+        reversalHistoryHtml += '<p>Semitone values: ' + Reversals[1].map(l => mapLevelToSemitone(l).toFixed(2)).join(', ') + '</p>';
+    }
+    
+    document.getElementById('reversalHistory').innerHTML = reversalHistoryHtml;
+    
+    generateDiagnosticRecommendations();
+}
+
+function getDirectionStatus(dirIndex) {
+    if (isTestComplete[dirIndex]) {
+        return { text: "Complete", class: "good" };
+    }
+    
+    if (NumberOfReversals[dirIndex] < 1) {
+        return { text: "Not enough data", class: "bad" };
+    }
+    
+    if (NumberOfReversals[dirIndex] < MINIMUMREVERSALS) {
+        return { text: "Incomplete (" + NumberOfReversals[dirIndex] + "/" + MINIMUMREVERSALS + " reversals)", class: "warning" };
+    }
+    
+    return { text: "In progress", class: "good" };
+}
+
+function checkAudioFiles() {
+    const requiredFiles = [
+        "standard",
+        "level_1_h", "level_2_h", "level_3_h", "level_4_h", "level_5_h", 
+        "level_6_h", "level_7_h", "level_8_h", "level_9_h", "level_10_h",
+        "level_1_l", "level_2_l", "level_3_l", "level_4_l", "level_5_l", 
+        "level_6_l", "level_7_l", "level_8_l", "level_9_l", "level_10_l"
+    ];
+    
+    let statusHtml = '';
+    allFilesPresent = true;
+    
+    requiredFiles.forEach(function(fileId) {
+        const audioElement = document.getElementById(fileId);
+        const fileFound = audioElement !== null;
+        
+        if (!fileFound) {
+            allFilesPresent = false;
+        }
+        
+        statusHtml += `<div class="file-status-item ${fileFound ? 'file-found' : 'file-missing'}">${fileId}: ${fileFound ? 'Found' : 'Missing'}</div>`;
+    });
+    
+    document.getElementById('audioFileStatus').innerHTML = statusHtml;
+}
+
+function generateDiagnosticRecommendations() {
+    let recommendations = '';
+    let hasIssues = false;
+    
+    if (!allFilesPresent) {
+        recommendations += '<p><strong>Critical Issue:</strong> Some required audio files are missing. Please ensure all files are properly loaded.</p>';
+        hasIssues = true;
+    }
+    
+    const directionDifference = Math.abs(trialsPerDirection[0] - trialsPerDirection[1]);
+    if (directionDifference > 10 && !isTestComplete[0] && !isTestComplete[1]) {
+        recommendations += '<p><strong>Warning:</strong> Trial count is imbalanced between higher and lower directions. Consider restarting experiment.</p>';
+        hasIssues = true;
+    }
+    
+    for (let i = 0; i < 2; i++) {
+        if (trialsPerDirection[i] >= MAXITERATIONS/2 && NumberOfReversals[i] < MINIMUMREVERSALS) {
+            recommendations += '<p><strong>Issue:</strong> ' + (i === 0 ? 'Higher' : 'Lower') + 
+                ' direction reached maximum trials but has insufficient reversals. This might indicate audio file issues or participant response patterns.</p>';
+            hasIssues = true;
+        }
+    }
+    
+    if (numberOfIterations > 10 && (trialsPerDirection[0] === 0 || trialsPerDirection[1] === 0)) {
+        recommendations += '<p><strong>Warning:</strong> One direction has not been tested at all. Algorithm may be malfunctioning.</p>';
+        hasIssues = true;
+    }
+    
+    if (!hasIssues) {
+        recommendations += '<p><strong>Good:</strong> No major issues detected with the experiment setup.</p>';
+        
+        if (isTestComplete[0] && isTestComplete[1]) {
+            recommendations += '<p>Both test directions are complete.</p>';
+        } else if (isTestComplete[0]) {
+            recommendations += '<p>Higher direction test is complete. Lower direction test still needs more data.</p>';
+        } else if (isTestComplete[1]) {
+            recommendations += '<p>Lower direction test is complete. Higher direction test still needs more data.</p>';
+        } else {
+            recommendations += '<p>Both test directions are still in progress.</p>';
+        }
+    }
+    
+    document.getElementById('diagnosticRecommendations').innerHTML = recommendations;
+}
+
+function retryIncompleteDirection() {
+    let retryDirection = null;
+    
+    if (isTestComplete[0] && !isTestComplete[1]) {
+        retryDirection = 1;
+    } else if (!isTestComplete[0] && isTestComplete[1]) {
+        retryDirection = 0;
+    } else if (!isTestComplete[0] && !isTestComplete[1]) {
+        retryDirection = (NumberOfReversals[0] < NumberOfReversals[1]) ? 0 : 1;
+    } else {
+        alert("Both directions are already complete.");
+        return;
+    }
+    
+    resetDirection(retryDirection);
+    forceDirection = retryDirection;
+    closeDiagnostics();
+    
+    if (document.getElementById('start').disabled) {
+        document.getElementById('text1').value = "Retrying " + (retryDirection === 0 ? "higher" : "lower") + " direction...";
+        beginIteration();
+    } else {
+        start_onclick();
+    }
+}
+
+function resetDirection(dirIndex) {
+    NumberOfReversals[dirIndex] = 0;
+    CorrectResponses[dirIndex] = 0;
+    Direction[dirIndex] = DECREASING;
+    currentLevel[dirIndex] = 5;
+    isTestComplete[dirIndex] = false;
+    Reversals[dirIndex] = [];
+    trialsPerDirection[dirIndex] = 0;
+    
+    trialRecords = trialRecords.filter(record => 
+        record.direction !== (dirIndex === 0 ? "Higher" : "Lower")
+    );
+    
+    logDebug((dirIndex === 0 ? "Higher" : "Lower") + " direction reset");
+    updateProgressBar();
+}
+
+async function testAudio() {
+    logDebug("Starting to test all audio files...");
+    var audios = document.querySelectorAll('audio');
+    
+    if (!audioUnlocked) {
+        unlockAudioContext();
+    }
+    
+    for (var i = 0; i < audios.length; i++) {
+        var audio = audios[i];
+        logDebug("Testing audio #" + (i + 1) + "/" + audios.length + ": " + audio.id);
+        
+        try {
+            await playAudioWithTimeout(audio, 5000);
+            logDebug(audio.id + " played successfully");
+        } catch (error) {
+            logDebug("Failed to play " + audio.id + ": " + error);
+        }
+        
+        // 短暂间隔后播放下一个
+        await delay(300);
+    }
+    
+    logDebug("All audio testing complete!");
+}
+
+function unlockAudioContext() {
+    logDebug("Attempting to unlock audio context...");
+    
+    var silentAudio = new Audio();
+    silentAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+    
+    var promise = silentAudio.play();
+    if (promise !== undefined) {
+        promise.then(function() {
+            logDebug("Audio context unlocked successfully");
+            silentAudio.remove();
+            audioUnlocked = true;
+        }).catch(function(error) {
+            logDebug("Failed to unlock audio context: " + error);
+        });
+    }
+    
+    // 解锁所有实际的音频元素（对 Safari/iOS 很重要）
+    var allAudios = document.querySelectorAll('audio');
+    allAudios.forEach(function(audio) {
+        audio.muted = true;
+        var playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(function() {
+                audio.pause();
+                audio.currentTime = 0;
+                audio.muted = false;
+            }).catch(function() {
+                audio.muted = false;
+            });
+        }
+    });
+    
+    logDebug("Attempted to unlock " + allAudios.length + " audio files for Safari/iOS");
+}
+
+/**
+ * 延迟函数
+ * @param {number} ms - 延迟毫秒数
+ */
+function delay(ms) {
+    return new Promise(function(resolve) {
+        setTimeout(resolve, ms);
+    });
+}
+
+/**
+ * 等待音频缓冲完成（解决 Chrome 因缓冲不足导致的卡顿）
+ * @param {HTMLAudioElement} audio - 音频元素
+ * @param {number} timeout - 最大等待时间（毫秒）
+ */
+function waitForAudioReady(audio, timeout) {
+    return new Promise(function(resolve) {
+        timeout = timeout || 5000;
+        
+        // readyState >= 3 (HAVE_FUTURE_DATA) 表示有足够数据可以播放
+        if (audio.readyState >= 3) {
+            logDebug("Audio " + audio.id + " already buffered (readyState: " + audio.readyState + ")");
+            resolve();
+            return;
+        }
+        
+        logDebug("Audio " + audio.id + " waiting for buffer (readyState: " + audio.readyState + ")");
+        
+        var resolved = false;
+        
+        var onCanPlay = function() {
+            if (!resolved) {
+                resolved = true;
+                audio.removeEventListener('canplaythrough', onCanPlay);
+                logDebug("Audio " + audio.id + " buffered and ready");
+                resolve();
+            }
+        };
+        
+        // 监听 canplaythrough 事件
+        audio.addEventListener('canplaythrough', onCanPlay);
+        
+        // 超时保护 - 避免无限等待
+        setTimeout(function() {
+            if (!resolved) {
+                resolved = true;
+                audio.removeEventListener('canplaythrough', onCanPlay);
+                logDebug("Audio " + audio.id + " buffer timeout, proceeding anyway");
+                resolve();
+            }
+        }, timeout);
+        
+        // 尝试触发加载
+        if (audio.readyState === 0) {
+            audio.load();
+        }
+    });
+}
+
+/**
+ * 可靠的音频播放函数（带缓冲检查和超时保护）
+ * - 解决 Chrome 因缓冲不足导致的卡顿
+ * - 解决 Safari onended 事件不触发问题
+ * @param {HTMLAudioElement} audio - 音频元素
+ * @param {number} timeout - 超时时间（毫秒），默认基于音频时长 + 2秒
+ */
+function playAudioWithTimeout(audio, timeout) {
+    return new Promise(function(resolve, reject) {
+        // 首先等待音频缓冲完成
+        waitForAudioReady(audio, 3000).then(function() {
+            var resolved = false;
+            
+            // 计算超时时间：音频时长 + 2秒缓冲，最少3秒
+            var timeoutMs = timeout || Math.max(3000, (audio.duration || 1) * 1000 + 2000);
+            
+            var onEnd = function() {
+                if (!resolved) {
+                    resolved = true;
+                    audio.removeEventListener('ended', onEnd);
+                    logDebug("Audio " + audio.id + " ended normally");
+                    resolve();
+                }
+            };
+            
+            // 使用 addEventListener 替代 onended（更可靠）
+            audio.addEventListener('ended', onEnd);
+            
+            // 超时保护 - Safari 如果 ended 事件没触发
+            setTimeout(function() {
+                if (!resolved) {
+                    resolved = true;
+                    audio.removeEventListener('ended', onEnd);
+                    logDebug("Audio " + audio.id + " timeout, forcing next step");
+                    resolve();
+                }
+            }, timeoutMs);
+            
+            audio.currentTime = 0;
+            var playPromise = audio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(function(err) {
+                    if (!resolved) {
+                        resolved = true;
+                        audio.removeEventListener('ended', onEnd);
+                        logDebug("Audio " + audio.id + " play failed: " + err);
+                        reject(err);
+                    }
+                });
+            }
+        });
+    });
+}
+
+function resetPage() {
+    numberOfIterations++;
+    document.getElementById('firstBtn').disabled = true;
+    document.getElementById('secondBtn').disabled = true;
+    document.getElementById('firstBtn').style.background = "#FF6666";
+    document.getElementById('secondBtn').style.background = "#FF6666";
+    document.getElementById('promptText').style.visibility = 'hidden';
+    
+    document.getElementById('retryCounter').style.display = 'none';
+    
+    if (isTestComplete[0] && isTestComplete[1]) {
+        document.getElementById('start').disabled = false;
+        document.getElementById('viewResult').disabled = false;
+        document.getElementById('text1').value = "實驗結束！";
+        updateProgressBar(100);
+        
+        // 自动发送实验结果到指定邮箱（防止重复发送）
+        if (!emailSent) {
+            emailSent = true;
+            logDebug("Preparing to send Level_mid experiment results via email...");
+            setTimeout(function() {
+                sendLevelMidExperimentResults();
+            }, 1000);
+        }
+        
+        return;
+    }
+    
+    if ((trialsPerDirection[currentStimDirection] >= MAXITERATIONS/2) || 
+        (NumberOfReversals[currentStimDirection] >= MAXREVERSALS)) {
+        
+        if (NumberOfReversals[currentStimDirection] >= MINIMUMREVERSALS) {
+            calculateResults(currentStimDirection);
+            isTestComplete[currentStimDirection] = true;
+        } else {
+            logDebug(
+                (currentStimDirection === 0 ? "Higher" : "Lower") + 
+                " direction reached max iterations but has only " + 
+                NumberOfReversals[currentStimDirection] + "/" + MINIMUMREVERSALS + 
+                " reversals. Showing diagnostics."
+            );
+            
+            document.getElementById('text1').value = 
+                (currentStimDirection === 0 ? "Higher" : "Lower") + 
+                " direction has insufficient data. Check diagnostics.";
+            
+            setTimeout(function() {
+                showDiagnostics();
+            }, 500);
+            return;
+        }
+        
+        updateProgressBar();
+        
+        if (!isTestComplete[0] || !isTestComplete[1]) {
+            document.getElementById('text1').value = "實驗繼續中...";
+            setTimeout(function() {
+                beginIteration();
+            }, 2000);
+        } else {
+            document.getElementById('start').disabled = false;
+            document.getElementById('viewResult').disabled = false;
+            document.getElementById('text1').value = "實驗結束！";
+            updateProgressBar(100);
+            
+            // 自动发送实验结果到指定邮箱（防止重复发送）
+            if (!emailSent) {
+                emailSent = true;
+                logDebug("Preparing to send Level_mid experiment results via email...");
+                setTimeout(function() {
+                    sendLevelMidExperimentResults();
+                }, 1000);
+            }
+        }
+    } else {
+        updateProgressBar();
+        beginIteration();
+    }
+}
+
+function updateProgressBar(forcePercent) {
+    if (typeof forcePercent === 'number') {
+        document.getElementById('progressBar').style.width = forcePercent + '%';
+        document.getElementById('progressLabel').textContent = 'Progress: ' + forcePercent + '%';
+        return;
+    }
+    
+    const higherDirMax = Math.max(MAXREVERSALS, MAXITERATIONS/2);
+    const higherDirValue = isTestComplete[0] ? higherDirMax : Math.max(NumberOfReversals[0], trialsPerDirection[0]);
+    const higherDirPercent = Math.min(50 * (higherDirValue / higherDirMax), 50);
+    
+    const lowerDirMax = Math.max(MAXREVERSALS, MAXITERATIONS/2);
+    const lowerDirValue = isTestComplete[1] ? lowerDirMax : Math.max(NumberOfReversals[1], trialsPerDirection[1]);
+    const lowerDirPercent = Math.min(50 * (lowerDirValue / lowerDirMax), 50);
+    
+    const totalPercent = higherDirPercent + lowerDirPercent;
+    
+    document.getElementById('progressBar').style.width = totalPercent + '%';
+    document.getElementById('progressLabel').textContent = 'Progress: ' + Math.round(totalPercent) + '%';
+}
+
+function calculateResults(directionIndex) {
+    let sum = 0.0, stddevsum = 0.0, average = 0.0, stdev = 0.0, counter = 0;
+    
+    for (let i = 0; i < Reversals[directionIndex].length; i++) {
+        if (Reversals[directionIndex][i] > 0) counter++;
+    }
+    
+    if (counter < MINIMUMREVERSALS) {
+        logDebug((directionIndex === 0 ? "Higher" : "Lower") + " direction test has insufficient data");
+        alert((directionIndex === 0 ? "Higher" : "Lower") + " direction test has insufficient data. Please complete the test again.");
+        return;
+    }
+    
+    const startIndex = Math.max(0, NumberOfReversals[directionIndex] - THRESHOLD_REVERSAL_COUNT);
+    counter = 0;
+    
+    for (let i = startIndex; i < Reversals[directionIndex].length; i++) {
+        const level = Reversals[directionIndex][i];
+        if (level > 0) {
+            const semitones = mapLevelToSemitone(level);
+            if (semitones !== undefined) {
+                sum += semitones;
+                counter++;
+            }
+        }
+    }
+    
+    if (counter > 0) {
+        average = sum / counter;
+        average = parseFloat(average.toFixed(4));
+    }
+    
+    for (let i = startIndex; i < Reversals[directionIndex].length; i++) {
+        const level = Reversals[directionIndex][i];
+        if (level > 0) {
+            const semitones = mapLevelToSemitone(level);
+            if (semitones !== undefined) {
+                stddevsum += Math.pow(semitones - average, 2);
+            }
+        }
+    }
+    
+    if (counter > 1) {
+        stdev = Math.sqrt(stddevsum / (counter - 1));
+        stdev = parseFloat(stdev.toFixed(4));
+    }
+    
+    sentAverage[directionIndex] = average;
+    sentStdev[directionIndex] = stdev;
+    
+    logDebug((directionIndex === 0 ? "Higher" : "Lower") + " direction test complete! Threshold: " + average.toFixed(4) + " semitones (based on last " + counter + " reversals)");
+    document.getElementById('text1').value = 
+        (directionIndex === 0 ? "Higher" : "Lower") + " direction test complete! Threshold: " + average.toFixed(4) + " semitones";
+}
+
+function beginIteration() {
+    isReplayTrial = false;
+    currentRetryCount = 0;
+    
+    if (forceDirection !== null) {
+        currentStimDirection = forceDirection;
+        
+        if (trialsPerDirection[forceDirection] % 5 === 0) {
+            logDebug("Releasing forced direction after 5 trials");
+            forceDirection = null;
+        }
+    } 
+    else if (isTestComplete[0]) {
+        currentStimDirection = 1;
+    } 
+    else if (isTestComplete[1]) {
+        currentStimDirection = 0;
+    }
+    else if (Math.abs(trialsPerDirection[0] - trialsPerDirection[1]) > FORCEBALANCETHRESHOLD) {
+        currentStimDirection = (trialsPerDirection[0] > trialsPerDirection[1]) ? 1 : 0;
+        logDebug("Forcing balance: selecting " + (currentStimDirection === 0 ? "higher" : "lower") + " direction");
+    }
+    else {
+        currentStimDirection = Math.random() < 0.5 ? 0 : 1;
+    }
+    
+    directionHistory.push(currentStimDirection);
+    
+    standardIsFirst = Math.random() < 0.5;
+    var xIsStandard = Math.random() < 0.5;
+    
+    if (xIsStandard) {
+        CorrectAnswer = standardIsFirst ? 1 : 2;
+    } else {
+        CorrectAnswer = standardIsFirst ? 2 : 1;
+    }
+    
+    trialsPerDirection[currentStimDirection]++;
+    
+    logDebug("Starting new iteration #" + numberOfIterations + 
+             ", Direction: " + (currentStimDirection === 0 ? "Higher" : "Lower") + 
+             ", Standard is " + (standardIsFirst ? "first" : "second") +
+             ", X is " + (xIsStandard ? "standard" : "comparison") +
+             ", Correct answer: " + (CorrectAnswer === 1 ? "First" : "Second") +
+             ", Difficulty level: " + currentLevel[currentStimDirection] +
+             " (" + mapLevelToSemitone(currentLevel[currentStimDirection]).toFixed(2) + " ST)");
+    
+    setTimeout(function() {
+        playABXSequence(xIsStandard);
+    }, 1000);
+}
+
+function clearButtonAnimations() {
+    document.getElementById('firstBtn').classList.remove('button-playing');
+    document.getElementById('secondBtn').classList.remove('button-playing');
+}
+
+async function playABXSequence(xIsStandard) {
+    logDebug("Playing ABX sequence");
+    
+    clearButtonAnimations();
+    
+    standardSound = document.getElementById('standard');
+    
+    const level = currentLevel[currentStimDirection];
+    if (currentStimDirection === 0) {
+        comparisonSound = document.getElementById("level_" + level + "_h");
+    } else {
+        comparisonSound = document.getElementById("level_" + level + "_l");
+    }
+    
+    xSound = xIsStandard ? standardSound : comparisonSound;
+    
+    if (!standardSound || !comparisonSound) {
+        logDebug("Error: Cannot find audio elements! Standard: " + (standardSound ? "OK" : "MISSING") + 
+                 ", Comparison (level_" + level + "_" + (currentStimDirection === 0 ? "h" : "l") + "): " + 
+                 (comparisonSound ? "OK" : "MISSING"));
+        document.getElementById('text1').value = "出錯：找不到音頻文件";
+        setTimeout(function() {
+            showDiagnostics();
+        }, 1000);
+        return;
+    }
+    
+    var firstSound = standardIsFirst ? standardSound : comparisonSound;
+    var secondSound = standardIsFirst ? comparisonSound : standardSound;
+    
+    try {
+        // 播放第一個音
+        document.getElementById('text1').value = "播放第一個音";
+        document.getElementById('firstBtn').classList.add('button-playing');
+        logDebug("Playing first sound (A)...");
+        await playAudioWithTimeout(firstSound);
+        document.getElementById('firstBtn').classList.remove('button-playing');
+        
+        // 間隔
+        await delay(1000);
+        
+        // 播放第二個音
+        document.getElementById('text1').value = "播放第二個音";
+        document.getElementById('secondBtn').classList.add('button-playing');
+        logDebug("Playing second sound (B)...");
+        await playAudioWithTimeout(secondSound);
+        document.getElementById('secondBtn').classList.remove('button-playing');
+        
+        // 間隔
+        await delay(1000);
+        
+        // 播放第三個音 (X)
+        document.getElementById('text1').value = "播放第三個音";
+        logDebug("Playing third sound (X)...");
+        await playAudioWithTimeout(xSound);
+        
+        // 啟用按鈕讓用戶選擇
+        logDebug("All sounds played, enabling response buttons");
+        stimulusEndTime = performance.now();
+        
+        document.getElementById('text1').value = "請作出選擇";
+        document.getElementById('promptText').style.visibility = 'visible';
+        
+        document.getElementById('firstBtn').disabled = false;
+        document.getElementById('secondBtn').disabled = false;
+        document.getElementById('firstBtn').style.background = "#66CCFF";
+        document.getElementById('secondBtn').style.background = "#66CCFF";
+        
+    } catch (error) {
+        logDebug("Audio playback error: " + error);
+        document.getElementById('text1').value = "音頻播放錯誤，請刷新頁面";
+        clearButtonAnimations();
+        setTimeout(showDiagnostics, 1000);
+    }
+}
+
+function start_onclick() {
+    logDebug("Starting experiment");
+    
+    // 记录实验开始时间（如果还没记录的话）
+    if (!window.experimentStartTime) {
+        const startTime = new Date().toLocaleString('zh-CN');
+        window.experimentStartTime = startTime;
+        localStorage.setItem('experimentStartTime', startTime);
+        logDebug("Experiment start time recorded: " + startTime);
+    }
+    
+    if (!audioUnlocked) {
+        unlockAudioContext();
+    }
+    
+    checkAudioFiles();
+    if (!allFilesPresent) {
+        logDebug("Cannot start experiment: Some audio files are missing");
+        document.getElementById('text1').value = "音頻缺失";
+        showDiagnostics();
+        return;
+    }
+    
+    window_onload();
+    document.getElementById('text1').value = "開始實驗...";
+    updateProgressBar(0);
+    
+    setTimeout(function() {
+        beginIteration();
+        document.getElementById('start').disabled = true;
+        document.getElementById('viewResult').disabled = true;
+        document.getElementById('smile').src = "Media/null.gif";
+        document.getElementById('promptText').style.visibility = 'hidden';
+    }, 1000);
+}
+
+function gotReversal(dirIndex) {
+    NumberOfReversals[dirIndex]++;
+    Reversals[dirIndex][NumberOfReversals[dirIndex] - 1] = currentLevel[dirIndex];
+    Direction[dirIndex] = -Direction[dirIndex];
+    logDebug("Recorded reversal #" + NumberOfReversals[dirIndex] + " at difficulty level " + currentLevel[dirIndex] + 
+             " (" + mapLevelToSemitone(currentLevel[dirIndex]).toFixed(2) + " ST)");
+}
+
+function processAnswer(Response) {
+    const reactionEndTime = performance.now();
+    const reactionTime = reactionEndTime - stimulusEndTime;
+    
+    logDebug("User answered: " + (Response === 1 ? "First" : "Second") + 
+             ", Correct answer: " + (CorrectAnswer === 1 ? "First" : "Second") +
+             ", Is replay: " + isReplayTrial +
+             ", Retry count: " + currentRetryCount);
+    
+    document.getElementById('firstBtn').disabled = true;
+    document.getElementById('secondBtn').disabled = true;
+    document.getElementById('promptText').style.visibility = 'hidden';
+    
+    const isCorrect = (Response === CorrectAnswer);
+    
+    if (!isReplayTrial) {
+        const trialInfo = {
+            trialNumber: numberOfIterations,
+            timestamp: getLocalTimestamp(),
+            direction: currentStimDirection === 0 ? "Higher" : "Lower",
+            difficultyLevel: currentLevel[currentStimDirection],
+            semitoneValue: mapLevelToSemitone(currentLevel[currentStimDirection]),
+            userResponse: Response === 1 ? "First Tone" : "Second Tone",
+            correctResponse: CorrectAnswer === 1 ? "First Tone" : "Second Tone",
+            isCorrect: isCorrect,
+            reactionTime: reactionTime.toFixed(0),
+            isReversal: false,
+            stepDirection: Direction[currentStimDirection] === DECREASING ? "Increasing Difficulty" : "Decreasing Difficulty",
+            standardPosition: standardIsFirst ? "First" : "Second"
+        };
+        
+        trialRecords.push(trialInfo);
+    }
+    
+    if (isCorrect) {
+        logDebug("Correct answer");
+        document.getElementById('smile').src = "Media/smiley.png";
+        document.getElementById('text1').value = "正確！";
+        
+        if (!isReplayTrial) {
+            CorrectResponses[currentStimDirection]++;
+            
+            if (CorrectResponses[currentStimDirection] == 2) {
+                logDebug("Two correct answers in a row - increasing difficulty");
+                CorrectResponses[currentStimDirection] = 0;
+                
+                if (Direction[currentStimDirection] == INCREASING) {
+                    gotReversal(currentStimDirection);
+                    if (trialRecords.length > 0) {
+                        trialRecords[trialRecords.length-1].isReversal = true;
+                    }
+                }
+                
+                changeLevel(DECREASING, currentStimDirection);
+            }
+        }
+        
+        setTimeout(function() {
+            document.getElementById("smile").src = 'Media/null.gif';
+            resetPage();
+        }, 1500);
+        
+    } else {
+        logDebug("Incorrect answer");
+        document.getElementById('smile').src = "Media/nosmiley.png";
+        
+        var correctAnswerText = CorrectAnswer === 1 ? "第一個音" : "第二個音";
+        document.getElementById('text1').value = "錯誤！正確答案是：" + correctAnswerText;
+        
+        if (!isReplayTrial) {
+            CorrectResponses[currentStimDirection] = 0;
+            
+            if (Direction[currentStimDirection] == DECREASING) {
+                gotReversal(currentStimDirection);
+                if (trialRecords.length > 0) {
+                    trialRecords[trialRecords.length-1].isReversal = true;
+                }
+            }
+            
+            changeLevel(INCREASING, currentStimDirection);
+        }
+        
+        if (currentRetryCount < MAX_RETRY_COUNT) {
+            currentRetryCount++;
+            
+            const retryCounter = document.getElementById('retryCounter');
+            retryCounter.textContent = "重試次數: " + currentRetryCount + "/" + MAX_RETRY_COUNT;
+            retryCounter.style.display = 'block';
+            
+            setTimeout(function() {
+                document.getElementById("smile").src = 'Media/null.gif';
+                document.getElementById('text1').value = "重播刺激音... (第" + currentRetryCount + "次重試)";
+                
+                setTimeout(function() {
+                    isReplayTrial = true;
+                    
+                    var xIsStandard = (standardIsFirst && CorrectAnswer === 1) || 
+                                      (!standardIsFirst && CorrectAnswer === 2);
+                    playABXSequence(xIsStandard);
+                }, 1000);
+            }, 2000);
+        } else {
+            logDebug("Max retry count reached, moving to next trial");
+            
+            setTimeout(function() {
+                document.getElementById("smile").src = 'Media/null.gif';
+                document.getElementById('text1').value = "已達最大重試次數,進入下一題...";
+                
+                setTimeout(function() {
+                    resetPage();
+                }, 1500);
+            }, 2000);
+        }
+    }
+}
+
+// 修改后的changeLevel函数 - 所有步长统一为1
+function changeLevel(whichWay, dirIndex) {
+    var oldLevel = currentLevel[dirIndex];
+    var stepSize = 1;  // 统一步长为1
+    
+    if (whichWay == DECREASING) {
+        currentLevel[dirIndex] = Math.min(UPPERLIMIT, currentLevel[dirIndex] + stepSize);
+    } else {
+        currentLevel[dirIndex] = Math.max(LOWERLIMIT, currentLevel[dirIndex] - stepSize);
+    }
+    
+    logDebug("Difficulty changed from level " + oldLevel + " (" + mapLevelToSemitone(oldLevel).toFixed(2) + " ST) to level " + 
+             currentLevel[dirIndex] + " (" + mapLevelToSemitone(currentLevel[dirIndex]).toFixed(2) + " ST) " +
+             (whichWay == DECREASING ? "(increasing difficulty)" : "(decreasing difficulty)") +
+             " with step size 1");
+}
+
+function getThresholdAssessment(value) {
+    if (value <= 0.05) return "Exceptional";
+    if (value <= 0.1) return "Excellent";
+    if (value <= 0.25) return "Good";
+    if (value <= 0.5) return "Average";
+    if (value <= 1.0) return "Below Average";
+    return "Needs Improvement";
+}
+
+function calculateReactionTimeStats() {
+    let higherRTs = trialRecords.filter(t => t.direction === "Higher" && !t.isReplay).map(t => parseFloat(t.reactionTime));
+    let lowerRTs = trialRecords.filter(t => t.direction === "Lower" && !t.isReplay).map(t => parseFloat(t.reactionTime));
+    let allRTs = higherRTs.concat(lowerRTs);
+    
+    return {
+        higher: {
+            mean: higherRTs.length ? (higherRTs.reduce((a, b) => a + b, 0) / higherRTs.length).toFixed(0) : "N/A",
+            median: higherRTs.length ? calculateMedian(higherRTs).toFixed(0) : "N/A",
+            sd: higherRTs.length > 1 ? calculateSD(higherRTs).toFixed(0) : "N/A"
+        },
+        lower: {
+            mean: lowerRTs.length ? (lowerRTs.reduce((a, b) => a + b, 0) / lowerRTs.length).toFixed(0) : "N/A",
+            median: lowerRTs.length ? calculateMedian(lowerRTs).toFixed(0) : "N/A",
+            sd: lowerRTs.length > 1 ? calculateSD(lowerRTs).toFixed(0) : "N/A"
+        },
+        overall: {
+            mean: allRTs.length ? (allRTs.reduce((a, b) => a + b, 0) / allRTs.length).toFixed(0) : "N/A",
+            median: allRTs.length ? calculateMedian(allRTs).toFixed(0) : "N/A",
+            sd: allRTs.length > 1 ? calculateSD(allRTs).toFixed(0) : "N/A"
+        }
+    };
+}
+
+function calculateAccuracyStats() {
+    let higherTrials = trialRecords.filter(t => t.direction === "Higher");
+    let lowerTrials = trialRecords.filter(t => t.direction === "Lower");
+    let allTrials = trialRecords;
+    
+    return {
+        higher: {
+            correct: higherTrials.filter(t => t.isCorrect).length,
+            total: higherTrials.length,
+            percentage: higherTrials.length ? 
+                (higherTrials.filter(t => t.isCorrect).length / higherTrials.length * 100).toFixed(1) : "N/A"
+        },
+        lower: {
+            correct: lowerTrials.filter(t => t.isCorrect).length,
+            total: lowerTrials.length,
+            percentage: lowerTrials.length ? 
+                (lowerTrials.filter(t => t.isCorrect).length / lowerTrials.length * 100).toFixed(1) : "N/A"
+        },
+        overall: {
+            correct: allTrials.filter(t => t.isCorrect).length,
+            total: allTrials.length,
+            percentage: allTrials.length ? 
+                (allTrials.filter(t => t.isCorrect).length / allTrials.length * 100).toFixed(1) : "N/A"
+        }
+    };
+}
+
+function calculateMedian(values) {
+    if (!values.length) return 0;
+    
+    const sortedValues = values.slice().sort((a, b) => a - b);
+    const mid = Math.floor(sortedValues.length / 2);
+    
+    return sortedValues.length % 2 === 0 ? 
+        (sortedValues[mid - 1] + sortedValues[mid]) / 2 : 
+        sortedValues[mid];
+}
+
+function calculateSD(values) {
+    if (values.length <= 1) return 0;
+    
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance = values.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (values.length - 1);
+    
+    return Math.sqrt(variance);
+}
+
+function displayResults() {
+    logDebug("Displaying results");
+    
+    let hasHigherData = NumberOfReversals[0] >= MINIMUMREVERSALS;
+    let hasLowerData = NumberOfReversals[1] >= MINIMUMREVERSALS;
+    
+    if (!hasHigherData || !hasLowerData) {
+        let message = "Warning: ";
+        if (!hasHigherData) message += "Higher direction has insufficient data. ";
+        if (!hasLowerData) message += "Lower direction has insufficient data. ";
+        message += "Results may not be reliable.";
+        
+        if (confirm(message + "\n\nWould you like to retry the experiment?")) {
+            window_onload();
+            return;
+        }
+    }
+    
+    document.getElementById('experimentContainer').style.display = 'none';
+    document.getElementById('resultsContainer').style.display = 'block';
+    
+    var tableBody = document.getElementById('resultTableBody');
+    tableBody.innerHTML = '';
+    
+    var higherRow = document.createElement('tr');
+    higherRow.innerHTML = 
+        '<td>Higher Direction</td>' +
+        '<td>' + (hasHigherData ? sentAverage[0].toFixed(4) : 'Insufficient data') + '</td>' +
+        '<td>' + (hasHigherData ? sentStdev[0].toFixed(4) : '-') + '</td>' +
+        '<td>' + (hasHigherData ? getThresholdAssessment(sentAverage[0]) : '-') + '</td>';
+    tableBody.appendChild(higherRow);
+    
+    var lowerRow = document.createElement('tr');
+    lowerRow.innerHTML = 
+        '<td>Lower Direction</td>' +
+        '<td>' + (hasLowerData ? sentAverage[1].toFixed(4) : 'Insufficient data') + '</td>' +
+        '<td>' + (hasLowerData ? sentStdev[1].toFixed(4) : '-') + '</td>' +
+        '<td>' + (hasLowerData ? getThresholdAssessment(sentAverage[1]) : '-') + '</td>';
+    tableBody.appendChild(lowerRow);
+    
+    if (hasHigherData && hasLowerData) {
+        var avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        var combinedVariance = (Math.pow(sentStdev[0], 2) + Math.pow(sentStdev[1], 2)) / 2;
+        var combinedSD = Math.sqrt(combinedVariance).toFixed(4);
+        
+        var avgRow = document.createElement('tr');
+        avgRow.style.fontWeight = 'bold';
+        avgRow.innerHTML = 
+            '<td>Average</td>' +
+            '<td>' + avgThreshold.toFixed(4) + '</td>' +
+            '<td>' + combinedSD + '</td>' +
+            '<td>' + getThresholdAssessment(avgThreshold) + '</td>';
+        tableBody.appendChild(avgRow);
+    }
+    
+    var interpretation = document.getElementById('resultInterpretation');
+    let interpretationHtml = '<p><strong>Threshold Interpretation (ABX Task):</strong></p>';
+    
+    if (hasHigherData && hasLowerData) {
+        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        interpretationHtml += '<p>Your average pitch discrimination threshold is ' + avgThreshold.toFixed(4) + ' semitones, indicating ' + 
+            getThresholdAssessment(avgThreshold) + ' pitch discrimination ability.</p>';
+    } else {
+        interpretationHtml += '<p><strong>Note:</strong> Complete results not available due to insufficient data.</p>';
+        
+        if (hasHigherData) {
+            interpretationHtml += '<p>Your higher direction threshold is ' + sentAverage[0].toFixed(4) + 
+                ' semitones, indicating ' + getThresholdAssessment(sentAverage[0]) + ' discrimination ability for higher pitches.</p>';
+        }
+        
+        if (hasLowerData) {
+            interpretationHtml += '<p>Your lower direction threshold is ' + sentAverage[1].toFixed(4) + 
+                ' semitones, indicating ' + getThresholdAssessment(sentAverage[1]) + ' discrimination ability for lower pitches.</p>';
+        }
+    }
+    
+    interpretationHtml += '<p><strong>Performance Metrics:</strong></p>';
+    
+    const rtStats = calculateReactionTimeStats();
+    const accuracyStats = calculateAccuracyStats();
+    
+    interpretationHtml += '<p>Your average reaction time was ' + rtStats.overall.mean + 
+        ' ms, with ' + accuracyStats.overall.percentage + '% overall accuracy.</p>';
+    
+    interpretation.innerHTML = interpretationHtml;
+    
+    var rtTableBody = document.getElementById('rtStatsTableBody');
+    rtTableBody.innerHTML = '';
+    
+    var higherRtRow = document.createElement('tr');
+    higherRtRow.innerHTML = 
+        '<td>Higher Direction</td>' +
+        '<td>' + rtStats.higher.mean + '</td>' +
+        '<td>' + rtStats.higher.median + '</td>' +
+        '<td>' + rtStats.higher.sd + '</td>';
+    rtTableBody.appendChild(higherRtRow);
+    
+    var lowerRtRow = document.createElement('tr');
+    lowerRtRow.innerHTML = 
+        '<td>Lower Direction</td>' +
+        '<td>' + rtStats.lower.mean + '</td>' +
+        '<td>' + rtStats.lower.median + '</td>' +
+        '<td>' + rtStats.lower.sd + '</td>';
+    rtTableBody.appendChild(lowerRtRow);
+    
+    var overallRtRow = document.createElement('tr');
+    overallRtRow.style.fontWeight = 'bold';
+    overallRtRow.innerHTML = 
+        '<td>Overall</td>' +
+        '<td>' + rtStats.overall.mean + '</td>' +
+        '<td>' + rtStats.overall.median + '</td>' +
+        '<td>' + rtStats.overall.sd + '</td>';
+    rtTableBody.appendChild(overallRtRow);
+    
+    var accuracyTableBody = document.getElementById('accuracyStatsTableBody');
+    accuracyTableBody.innerHTML = '';
+    
+    var higherAccRow = document.createElement('tr');
+    higherAccRow.innerHTML = 
+        '<td>Higher Direction</td>' +
+        '<td>' + accuracyStats.higher.correct + '</td>' +
+        '<td>' + accuracyStats.higher.total + '</td>' +
+        '<td>' + accuracyStats.higher.percentage + '%</td>';
+    accuracyTableBody.appendChild(higherAccRow);
+    
+    var lowerAccRow = document.createElement('tr');
+    lowerAccRow.innerHTML = 
+        '<td>Lower Direction</td>' +
+        '<td>' + accuracyStats.lower.correct + '</td>' +
+        '<td>' + accuracyStats.lower.total + '</td>' +
+        '<td>' + accuracyStats.lower.percentage + '%</td>';
+    accuracyTableBody.appendChild(lowerAccRow);
+    
+    var overallAccRow = document.createElement('tr');
+    overallAccRow.style.fontWeight = 'bold';
+    overallAccRow.innerHTML = 
+        '<td>Overall</td>' +
+        '<td>' + accuracyStats.overall.correct + '</td>' +
+        '<td>' + accuracyStats.overall.total + '</td>' +
+        '<td>' + accuracyStats.overall.percentage + '%</td>';
+    accuracyTableBody.appendChild(overallAccRow);
+    
+    drawResultChart(hasHigherData, hasLowerData);
+}
+
+function drawResultChart(hasHigherData, hasLowerData) {
+    var chartContainer = document.getElementById('resultChart');
+    
+    var chartHTML = '<div style="display: flex; flex-direction: column; height: 100%;">';
+    chartHTML += '<div style="text-align: center; margin-bottom: 10px;"><strong>Threshold Comparison</strong></div>';
+    
+    chartHTML += '<div style="display: flex; justify-content: center; margin-bottom: 10px;">';
+    chartHTML += '<span style="margin-right: 20px;"><span style="display: inline-block; width: 15px; height: 15px; background-color: #3498db; margin-right: 5px;"></span>Higher Direction</span>';
+    chartHTML += '<span><span style="display: inline-block; width: 15px; height: 15px; background-color: #e74c3c; margin-right: 5px;"></span>Lower Direction</span>';
+    chartHTML += '</div>';
+    
+    chartHTML += '<div style="flex: 1; display: flex; align-items: flex-end; border-left: 1px solid #333; border-bottom: 1px solid #333; position: relative;">';
+    
+    let maxValue = 0.5;
+    if (hasHigherData) maxValue = Math.max(maxValue, sentAverage[0]);
+    if (hasLowerData) maxValue = Math.max(maxValue, sentAverage[1]);
+    
+    if (hasHigherData) {
+        var higherHeight = (sentAverage[0] / maxValue) * 80;
+        chartHTML += '<div style="width: 40px; height: ' + higherHeight + '%; background-color: #3498db; margin: 0 20px; position: relative;">';
+        chartHTML += '<div style="position: absolute; top: -20px; width: 100%; text-align: center;">' + sentAverage[0].toFixed(4) + '</div>';
+        chartHTML += '</div>';
+    } else {
+        chartHTML += '<div style="width: 40px; height: 5%; background-color: #ccc; margin: 0 20px; position: relative;">';
+        chartHTML += '<div style="position: absolute; top: -20px; width: 100%; text-align: center;">N/A</div>';
+        chartHTML += '</div>';
+    }
+    
+    if (hasLowerData) {
+        var lowerHeight = (sentAverage[1] / maxValue) * 80;
+        chartHTML += '<div style="width: 40px; height: ' + lowerHeight + '%; background-color: #e74c3c; margin: 0 20px; position: relative;">';
+        chartHTML += '<div style="position: absolute; top: -20px; width: 100%; text-align: center;">' + sentAverage[1].toFixed(4) + '</div>';
+        chartHTML += '</div>';
+    } else {
+        chartHTML += '<div style="width: 40px; height: 5%; background-color: #ccc; margin: 0 20px; position: relative;">';
+        chartHTML += '<div style="position: absolute; top: -20px; width: 100%; text-align: center;">N/A</div>';
+        chartHTML += '</div>';
+    }
+    
+    chartHTML += '<div style="position: absolute; bottom: -25px; left: 20px; width: 40px; text-align: center;">Higher</div>';
+    chartHTML += '<div style="position: absolute; bottom: -25px; left: 80px; width: 40px; text-align: center;">Lower</div>';
+    chartHTML += '<div style="position: absolute; left: -35px; top: 20%; transform: rotate(-90deg);">Threshold (semitones)</div>';
+    
+    chartHTML += '</div>';
+    chartHTML += '</div>';
+    
+    chartContainer.innerHTML = chartHTML;
+}
+
+function backToExperiment() {
+    document.getElementById('experimentContainer').style.display = 'block';
+    document.getElementById('resultsContainer').style.display = 'none';
+}
+
+function view_onclick() {
+    logDebug("View results button clicked");
+    
+    for (let i = 0; i < 2; i++) {
+        if (!isTestComplete[i] && NumberOfReversals[i] >= MINIMUMREVERSALS) {
+            calculateResults(i);
+            isTestComplete[i] = true;
+        }
+    }
+    
+    displayResults();
+    
+    // 自动发送实验结果到指定邮箱（防止重复发送）
+    if (!emailSent) {
+        emailSent = true;
+        logDebug("Preparing to send Level_mid experiment results via email...");
+        
+        // 延迟1秒后发送邮件,确保所有数据已准备好
+        setTimeout(function() {
+            sendLevelMidExperimentResults();
+        }, 1000);
+    } else {
+        logDebug("Email already sent, skipping duplicate send");
+    }
+}
+
+/**
+ * Level_mid 专用的邮件发送函数
+ * 使用与 exportToCSV 完全相同的 CSV 格式
+ */
+function sendLevelMidExperimentResults() {
+    logDebug("Preparing Level_mid experiment results for email...");
+    
+    // 检查 EmailJS 是否已加载
+    if (typeof emailjs === 'undefined') {
+        logDebug("Error: EmailJS library not loaded");
+        alert('EmailJS庫未加載！請檢查網絡連接。');
+        return;
+    }
+    
+    // 获取被试ID和训练场次
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
+    // 使用与 exportToCSV 完全相同的 CSV 格式
+    const csvRows = [];
+    
+    // 添加被试信息
+    csvRows.push("Participant ID: " + participantId);
+    csvRows.push("Session Number: " + sessionNumber);
+    csvRows.push("");
+    
+    const headers = [
+        "Trial Number", 
+        "Timestamp", 
+        "Direction", 
+        "Difficulty Level", 
+        "Semitone Value", 
+        "Standard Position",
+        "User Response", 
+        "Correct Response", 
+        "Is Correct", 
+        "Reaction Time (ms)", 
+        "Is Reversal",
+        "Step Direction"
+    ];
+    
+    csvRows.push(headers.join(","));
+    
+    trialRecords.forEach(function(trial) {
+        const row = [
+            trial.trialNumber,
+            '"' + trial.timestamp + '"',
+            trial.direction,
+            trial.difficultyLevel,
+            trial.semitoneValue,
+            trial.standardPosition,
+            '"' + trial.userResponse + '"',
+            '"' + trial.correctResponse + '"',
+            trial.isCorrect ? "1" : "0",
+            trial.reactionTime,
+            trial.isReversal ? "1" : "0",
+            '"' + trial.stepDirection + '"'
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    csvRows.push("\nRESULTS SUMMARY");
+    csvRows.push("\nThreshold Results (semitones)");
+    csvRows.push("Direction,Threshold,Standard Deviation,Assessment");
+    
+    const hasHigherData = NumberOfReversals[0] >= MINIMUMREVERSALS;
+    const hasLowerData = NumberOfReversals[1] >= MINIMUMREVERSALS;
+    
+    csvRows.push("Higher," + 
+        (hasHigherData ? sentAverage[0].toFixed(4) : "Insufficient data") + "," + 
+        (hasHigherData ? sentStdev[0].toFixed(4) : "N/A") + "," + 
+        (hasHigherData ? getThresholdAssessment(sentAverage[0]) : "N/A"));
+    
+    csvRows.push("Lower," + 
+        (hasLowerData ? sentAverage[1].toFixed(4) : "Insufficient data") + "," + 
+        (hasLowerData ? sentStdev[1].toFixed(4) : "N/A") + "," + 
+        (hasLowerData ? getThresholdAssessment(sentAverage[1]) : "N/A"));
+    
+    if (hasHigherData && hasLowerData) {
+        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        const combinedVariance = (Math.pow(sentStdev[0], 2) + Math.pow(sentStdev[1], 2)) / 2;
+        const combinedSD = Math.sqrt(combinedVariance).toFixed(4);
+        
+        csvRows.push("Average," + avgThreshold.toFixed(4) + "," + combinedSD + "," + getThresholdAssessment(avgThreshold));
+    }
+    
+    const rtStats = calculateReactionTimeStats();
+    csvRows.push("\nReaction Time Statistics (ms)");
+    csvRows.push("Direction,Mean,Median,Standard Deviation");
+    csvRows.push("Higher," + rtStats.higher.mean + "," + rtStats.higher.median + "," + rtStats.higher.sd);
+    csvRows.push("Lower," + rtStats.lower.mean + "," + rtStats.lower.median + "," + rtStats.lower.sd);
+    csvRows.push("Overall," + rtStats.overall.mean + "," + rtStats.overall.median + "," + rtStats.overall.sd);
+    
+    const accuracyStats = calculateAccuracyStats();
+    csvRows.push("\nAccuracy Statistics");
+    csvRows.push("Direction,Correct Responses,Total Responses,Percentage");
+    csvRows.push("Higher," + accuracyStats.higher.correct + "," + accuracyStats.higher.total + "," + accuracyStats.higher.percentage + "%");
+    csvRows.push("Lower," + accuracyStats.lower.correct + "," + accuracyStats.lower.total + "," + accuracyStats.lower.percentage + "%");
+    csvRows.push("Overall," + accuracyStats.overall.correct + "," + accuracyStats.overall.total + "," + accuracyStats.overall.percentage + "%");
+    
+    csvRows.push("\nExperiment Parameters");
+    csvRows.push("Paradigm,ABX");
+    csvRows.push("Max Reversals," + MAXREVERSALS);
+    csvRows.push("Min Reversals for Calculation," + MINIMUMREVERSALS);
+    csvRows.push("Max Iterations," + MAXITERATIONS);
+    csvRows.push("Difficulty Levels,10 (from 2.0 to 0.03 semitones)");
+    csvRows.push("Adaptive Rule,2-down-1-up");
+    csvRows.push("Step Size,1 (uniform)");
+    csvRows.push("Max Retry per Trial," + MAX_RETRY_COUNT);
+    
+    const csvContent = csvRows.join("\n");
+    
+    // 转换为 Base64
+    const BOM = '\uFEFF';
+    const contentWithBOM = BOM + csvContent;
+    const csvBase64 = btoa(unescape(encodeURIComponent(contentWithBOM)));
+    
+    // 生成文件名
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = participantId + "_Session" + sessionNumber + "_Level_Tone_ABX.csv";
+    
+    // 计算结果摘要
+    let resultsSummary = "Level Tone Discrimination Results:\n";
+    if (hasHigherData) {
+        resultsSummary += "- Higher Direction: " + sentAverage[0].toFixed(4) + " semitones\n";
+    }
+    if (hasLowerData) {
+        resultsSummary += "- Lower Direction: " + sentAverage[1].toFixed(4) + " semitones\n";
+    }
+    if (hasHigherData && hasLowerData) {
+        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        resultsSummary += "- Average Threshold: " + avgThreshold.toFixed(4) + " semitones\n";
+    }
+    resultsSummary += "- Accuracy: " + accuracyStats.overall.percentage + "%\n";
+    resultsSummary += "- Mean RT: " + rtStats.overall.mean + " ms";
+    
+    // 准备邮件参数
+    const templateParams = {
+        participant_id: participantId,
+        session_number: sessionNumber,
+        experiment_type: "Level Tone Discrimination (ABX)",
+        start_time: window.experimentStartTime || localStorage.getItem('experimentStartTime') || 'N/A',
+        completion_date: new Date().toLocaleString('zh-CN'),
+        total_trials: trialRecords.length,
+        total_reversals: NumberOfReversals[0] + NumberOfReversals[1],
+        jnd_value: hasHigherData && hasLowerData ? 
+            ((sentAverage[0] + sentAverage[1]) / 2).toFixed(4) + " semitones" : "N/A",
+        accuracy: accuracyStats.overall.percentage + "%",
+        mean_rt: rtStats.overall.mean + " ms",
+        attachment_name: fileName,
+        attachment_content: csvBase64,
+        results_summary: resultsSummary
+    };
+    
+    logDebug("Sending email with Level_mid data...");
+    logDebug("Higher threshold: " + (hasHigherData ? sentAverage[0].toFixed(4) : "N/A"));
+    logDebug("Lower threshold: " + (hasLowerData ? sentAverage[1].toFixed(4) : "N/A"));
+    
+    // 获取 EmailJS 配置
+    const serviceId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.serviceId) || 'service_exe9d5a';
+    const templateId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.templateId) || 'template_4c3g3ss';
+    
+    // 发送邮件
+    emailjs.send(serviceId, templateId, templateParams)
+        .then(function(response) {
+            logDebug("Email sent successfully! Status: " + response.status);
+            alert('实验结果已成功发送到指定邮箱！');
+            
+            // 检查是否需要跳转到下一个实验
+            if (typeof checkAndNavigateToNextExperiment === 'function') {
+                checkAndNavigateToNextExperiment();
+            }
+        })
+        .catch(function(error) {
+            logDebug("Failed to send email: " + error);
+            alert('发送邮件失败：' + error.text + '\n请检查网络连接或联系管理员。');
+        });
+}
+
+function testEmailSending() {
+    logDebug("Testing email sending functionality...");
+    
+    // 检查EmailJS是否已加载
+    if (typeof emailjs === 'undefined') {
+        alert('EmailJS庫未加載！請檢查網絡連接。');
+        logDebug("Error: EmailJS library not loaded");
+        return;
+    }
+    
+    // 检查是否有实验数据
+    if (trialRecords.length === 0) {
+        alert('沒有實驗數據！請先完成至少一次試驗。');
+        logDebug("Warning: No trial data available for testing");
+        return;
+    }
+    
+    // 确认发送
+    if (!confirm('確定要發送測試郵件嗎？\n\n這將發送當前的實驗數據到配置的郵箱。\n\n注意：這是測試功能，不會影響實驗完成後的自動發送。')) {
+        logDebug("Email test cancelled by user");
+        return;
+    }
+    
+    // 禁用按钮防止重复点击
+    const testBtn = document.getElementById('testEmailBtn');
+    const originalText = testBtn.textContent;
+    testBtn.disabled = true;
+    testBtn.textContent = '發送中...';
+    
+    logDebug("Initiating TEST email send (will not affect auto-send)...");
+    
+    // 直接发送测试邮件，不影响 emailSent 状态，不触发页面跳转
+    try {
+        // 获取被试ID和训练场次
+        const urlParams = new URLSearchParams(window.location.search);
+        const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+        const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+        
+        // 生成 CSV（与 exportToCSV 格式相同）
+        const csvRows = [];
+        csvRows.push("Participant ID: " + participantId);
+        csvRows.push("Session Number: " + sessionNumber);
+        csvRows.push("NOTE: This is a TEST email");
+        csvRows.push("");
+        
+        const headers = [
+            "Trial Number", "Timestamp", "Direction", "Difficulty Level", 
+            "Semitone Value", "Standard Position", "User Response", 
+            "Correct Response", "Is Correct", "Reaction Time (ms)", 
+            "Is Reversal", "Step Direction"
+        ];
+        csvRows.push(headers.join(","));
+        
+        trialRecords.forEach(function(trial) {
+            const row = [
+                trial.trialNumber, '"' + trial.timestamp + '"', trial.direction,
+                trial.difficultyLevel, trial.semitoneValue, trial.standardPosition,
+                '"' + trial.userResponse + '"', '"' + trial.correctResponse + '"',
+                trial.isCorrect ? "1" : "0", trial.reactionTime,
+                trial.isReversal ? "1" : "0", '"' + trial.stepDirection + '"'
+            ];
+            csvRows.push(row.join(","));
+        });
+        
+        const csvContent = csvRows.join("\n");
+        const BOM = '\uFEFF';
+        const csvBase64 = btoa(unescape(encodeURIComponent(BOM + csvContent)));
+        const fileName = "TEST_" + participantId + "_Session" + sessionNumber + "_Level_Tone_ABX.csv";
+        
+        const templateParams = {
+            participant_id: participantId,
+            session_number: sessionNumber,
+            experiment_type: "[TEST] Level Tone Discrimination (ABX)",
+            start_time: window.experimentStartTime || 'N/A',
+            completion_date: new Date().toLocaleString('zh-CN'),
+            total_trials: trialRecords.length,
+            total_reversals: NumberOfReversals[0] + NumberOfReversals[1],
+            jnd_value: "TEST - Data may be incomplete",
+            accuracy: "TEST",
+            mean_rt: "TEST",
+            attachment_name: fileName,
+            attachment_content: csvBase64,
+            results_summary: "This is a TEST email to verify email functionality."
+        };
+        
+        const serviceId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.serviceId) || 'service_exe9d5a';
+        const templateId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.templateId) || 'template_4c3g3ss';
+        
+        emailjs.send(serviceId, templateId, templateParams)
+            .then(function(response) {
+                logDebug("Test email sent successfully! Status: " + response.status);
+                alert('測試郵件發送成功！\n\n注意：這只是測試，實驗完成後仍會自動發送正式結果。');
+                testBtn.disabled = false;
+                testBtn.textContent = originalText;
+            })
+            .catch(function(error) {
+                logDebug("Test email failed: " + error);
+                alert('測試郵件發送失敗：' + error.text);
+                testBtn.disabled = false;
+                testBtn.textContent = originalText;
+            });
+        
+    } catch (error) {
+        logDebug("Error during email test: " + error);
+        alert('郵件發送過程中出錯：' + error);
+        testBtn.disabled = false;
+        testBtn.textContent = originalText;
+    }
+}
+
+function exportToCSV() {
+    // 获取 ParticipantID 和 Session
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
+    const csvRows = [];
+    
+    // 添加被试信息
+    csvRows.push("Participant ID: " + participantId);
+    csvRows.push("Session Number: " + sessionNumber);
+    csvRows.push("");
+    
+    const headers = [
+        "Trial Number", 
+        "Timestamp", 
+        "Direction", 
+        "Difficulty Level", 
+        "Semitone Value", 
+        "Standard Position",
+        "User Response", 
+        "Correct Response", 
+        "Is Correct", 
+        "Reaction Time (ms)", 
+        "Is Reversal",
+        "Step Direction"
+    ];
+    
+    csvRows.push(headers.join(","));
+    
+    trialRecords.forEach(function(trial) {
+        const row = [
+            trial.trialNumber,
+            '"' + trial.timestamp + '"',
+            trial.direction,
+            trial.difficultyLevel,
+            trial.semitoneValue,
+            trial.standardPosition,
+            '"' + trial.userResponse + '"',
+            '"' + trial.correctResponse + '"',
+            trial.isCorrect ? "1" : "0",
+            trial.reactionTime,
+            trial.isReversal ? "1" : "0",
+            '"' + trial.stepDirection + '"'
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    csvRows.push("\nRESULTS SUMMARY");
+    csvRows.push("\nThreshold Results (semitones)");
+    csvRows.push("Direction,Threshold,Standard Deviation,Assessment");
+    
+    const hasHigherData = NumberOfReversals[0] >= MINIMUMREVERSALS;
+    const hasLowerData = NumberOfReversals[1] >= MINIMUMREVERSALS;
+    
+    csvRows.push("Higher," + 
+        (hasHigherData ? sentAverage[0].toFixed(4) : "Insufficient data") + "," + 
+        (hasHigherData ? sentStdev[0].toFixed(4) : "N/A") + "," + 
+        (hasHigherData ? getThresholdAssessment(sentAverage[0]) : "N/A"));
+    
+    csvRows.push("Lower," + 
+        (hasLowerData ? sentAverage[1].toFixed(4) : "Insufficient data") + "," + 
+        (hasLowerData ? sentStdev[1].toFixed(4) : "N/A") + "," + 
+        (hasLowerData ? getThresholdAssessment(sentAverage[1]) : "N/A"));
+    
+    if (hasHigherData && hasLowerData) {
+        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        const combinedVariance = (Math.pow(sentStdev[0], 2) + Math.pow(sentStdev[1], 2)) / 2;
+        const combinedSD = Math.sqrt(combinedVariance).toFixed(4);
+        
+        csvRows.push("Average," + avgThreshold.toFixed(4) + "," + combinedSD + "," + getThresholdAssessment(avgThreshold));
+    }
+    
+    const rtStats = calculateReactionTimeStats();
+    csvRows.push("\nReaction Time Statistics (ms)");
+    csvRows.push("Direction,Mean,Median,Standard Deviation");
+    csvRows.push("Higher," + rtStats.higher.mean + "," + rtStats.higher.median + "," + rtStats.higher.sd);
+    csvRows.push("Lower," + rtStats.lower.mean + "," + rtStats.lower.median + "," + rtStats.lower.sd);
+    csvRows.push("Overall," + rtStats.overall.mean + "," + rtStats.overall.median + "," + rtStats.overall.sd);
+    
+    const accuracyStats = calculateAccuracyStats();
+    csvRows.push("\nAccuracy Statistics");
+    csvRows.push("Direction,Correct Responses,Total Responses,Percentage");
+    csvRows.push("Higher," + accuracyStats.higher.correct + "," + accuracyStats.higher.total + "," + accuracyStats.higher.percentage + "%");
+    csvRows.push("Lower," + accuracyStats.lower.correct + "," + accuracyStats.lower.total + "," + accuracyStats.lower.percentage + "%");
+    csvRows.push("Overall," + accuracyStats.overall.correct + "," + accuracyStats.overall.total + "," + accuracyStats.overall.percentage + "%");
+    
+    csvRows.push("\nExperiment Parameters");
+    csvRows.push("Paradigm,ABX");
+    csvRows.push("Max Reversals," + MAXREVERSALS);
+    csvRows.push("Min Reversals for Calculation," + MINIMUMREVERSALS);
+    csvRows.push("Max Iterations," + MAXITERATIONS);
+    csvRows.push("Difficulty Levels,10 (from 2.0 to 0.03 semitones)");
+    csvRows.push("Adaptive Rule,2-down-1-up");
+    csvRows.push("Step Size,1 (uniform)");
+    csvRows.push("Max Retry per Trial," + MAX_RETRY_COUNT);
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "pitch_discrimination_ABX_data_" + timestamp + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function window_onload() {
+    window.name = "EXP";
+    NumberOfReversals = [0, 0];
+    numberOfIterations = 0;
+    CorrectResponses = [0, 0];
+    Direction = [DECREASING, DECREASING];
+    currentLevel = [5, 5];
+    isTestComplete = [false, false];
+    Reversals = [[], []];
+    trialsPerDirection = [0, 0];
+    forceDirection = null;
+    directionHistory = [];
+    trialRecords = [];
+    isReplayTrial = false;
+    currentRetryCount = 0;
+    emailSent = false;
+
+    document.getElementById('text1').value = "準備完畢後請點擊\"開始實驗\"";
+    document.getElementById('smile').src = "Media/null.gif";
+    document.getElementById('start').disabled = false;
+    document.getElementById('viewResult').disabled = true;
+    document.getElementById('promptText').style.visibility = 'hidden';
+    document.getElementById('retryCounter').style.display = 'none';
+    
+    document.getElementById('experimentContainer').style.display = 'block';
+    document.getElementById('resultsContainer').style.display = 'none';
+    
+    updateProgressBar(0);
+    
+    logDebug("Page reset complete");
+}
+
+window.onload = function() {
+    window_onload();
+    
+    var allAudios = document.querySelectorAll('audio');
+    logDebug("Preloading " + allAudios.length + " audio files");
+    
+    allAudios.forEach(function(audio) {
+        audio.load();
+    });
+    
+    document.getElementById('text1').value = "請點擊\"開始實驗\"";
+    
+    window.onerror = function(message, source, lineno, colno, error) {
+        logDebug("Global error: " + message + " at " + source + ":" + lineno);
+        return false;
+    };
+    
+    document.getElementById('showDebug').checked = true;
+    toggleDebug();
+    
+    // 显示实验进度
+    displayExperimentProgress();
+};
+
+/**
+ * 显示实验进度信息
+ */
+function displayExperimentProgress() {
+    const experimentSequence = JSON.parse(localStorage.getItem('experimentSequence') || '[]');
+    const currentIndex = parseInt(localStorage.getItem('currentExperimentIndex') || '0');
+    
+    if (experimentSequence.length > 0) {
+        const totalExperiments = experimentSequence.length;
+        const currentNumber = currentIndex + 1;
+        
+        const progressElement = document.getElementById('experimentProgress');
+        const progressText = document.getElementById('progressText');
+        
+        if (progressElement && progressText) {
+            progressText.textContent = `${currentNumber}/${totalExperiments}`;
+            progressElement.style.display = 'inline-block';
+            
+            logDebug(`Displaying experiment progress: ${currentNumber}/${totalExperiments}`);
+        }
+    }
+}
+</script>
+</body>
+</html>
