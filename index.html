@@ -305,16 +305,16 @@
 <div class="container">
     <div class="header">
         <h1>🎵 Poly-Peng's Lab</h1>
-        <p>音高敏感度訓練 - Pitch Sensitivity Training System</p>
+        <p>音高敏感度訓練 - CT_PitchTraining</p>
     </div>
 
     <div class="content">
         <div class="intro">
             <h2>歡迎來到音高辨別實驗平台</h2>
             <p>
-                本系統採用ABX範式進行動態音高敏感度訓練與測試。通過自適應閾值實驗，
-                精確測量您對不同音高變化模式的辨別能力（Just Noticeable Difference, JND）。
-                請選擇以下任一實驗開始您的音高感知訓練。
+                本系統採用三段式音頻播放與 Catch Trial 反應任務，評估您在不同音高條件下的聆聽與定位能力。
+                每組會播放 3 段聲音；大多數情況僅需聆聽，聽到 Ding 後再於播放結束後點擊對應圖形。
+                請先填寫被試信息，再開始完整實驗流程。
             </p>
         </div>
 
@@ -364,12 +364,12 @@
         <div class="info-section">
             <h3>📋 實驗說明</h3>
             <ul>
-                <li><strong>實驗範式：</strong>ABX三音辨別任務 - 您將聽到三個音，判斷第三個音更像第一個還是第二個</li>
-                <li><strong>自適應算法：</strong>系統會根據您的表現自動調整難度，精確定位您的辨別閾值</li>
-                <li><strong>測量指標：</strong>Just Noticeable Difference (JND) - 可察覺的最小差異</li>
-                <li><strong>實驗時長：</strong>每個實驗約需10-15分鐘完成</li>
-                <li><strong>結果分析：</strong>實驗結束後可查看詳細的閾值分析報告和性能統計</li>
-                <li><strong>數據導出：</strong>支持導出CSV格式的詳細實驗數據</li>
+                <li><strong>實驗範式：</strong>每組播放 3 段聲音（含常規試次與 Catch 試次）</li>
+                <li><strong>作答規則：</strong>僅在聽到 Ding 的組別作答，且需在三段播放完成後再點擊對應圖形</li>
+                <li><strong>反應窗口：</strong>Catch 組別開放 1.5 秒點擊收集，超時記為漏反應</li>
+                <li><strong>實驗時長：</strong>每個實驗約需 10-15 分鐘</li>
+                <li><strong>結果輸出：</strong>每個任務單獨導出 CSV（含 Trial 類型、點擊準確率、RT、超時標記）</li>
+                <li><strong>數據導出：</strong>支持導出 CSV 格式的完整逐試次數據</li>
                 <li><strong>建議環境：</strong>請在安靜環境下使用耳機完成實驗，以獲得最佳測試效果</li>
             </ul>
         </div>
@@ -386,7 +386,7 @@
     </div>
 
     <div class="footer">
-        <p>&copy; 2024 PLOYU-Peng's Lab | Pitch Sensitivity Training System</p>
+        <p>&copy; 2024 PLOYU-Peng's Lab | CT_PitchTraining</p>
         <p style="margin-top: 5px; font-size: 12px;">Powered by Adaptive Threshold Experiment Technology</p>
     </div>
 </div>
@@ -407,9 +407,9 @@
 
     window.addEventListener('load', function() {
         const experimentFiles = [
-            'ABX_level_mid.html',
-            'ABX_rising_mid.html',
-            'ABX_falling_mid.html'
+            'CT_level_mid.html',
+            'CT_rising_mid.html',
+            'CT_falling_mid.html'
         ];
 
         console.log('實驗系統已加載');
@@ -477,9 +477,9 @@
         
         // 實驗列表
         const experimentFiles = [
-            'ABX_level_mid.html',
-            'ABX_rising_mid.html',
-            'ABX_falling_mid.html'
+            'CT_level_mid.html',
+            'CT_rising_mid.html',
+            'CT_falling_mid.html'
         ];
         
         // 生成隨機序列
