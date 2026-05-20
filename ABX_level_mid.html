@@ -2080,6 +2080,8 @@ function sendLevelMidExperimentResults() {
     csvRows.push("");
     
     const headers = [
+        "Participant ID",
+        "Session Number",
         "Trial Number", 
         "Timestamp", 
         "Direction", 
@@ -2098,6 +2100,8 @@ function sendLevelMidExperimentResults() {
     
     trialRecords.forEach(function(trial) {
         const row = [
+            '"' + participantId + '"',
+            '"' + sessionNumber + '"',
             trial.trialNumber,
             '"' + trial.timestamp + '"',
             trial.direction,
@@ -2278,7 +2282,7 @@ function testEmailSending() {
         csvRows.push("");
         
         const headers = [
-            "Trial Number", "Timestamp", "Direction", "Difficulty Level", 
+            "Participant ID", "Session Number", "Trial Number", "Timestamp", "Direction", "Difficulty Level", 
             "Semitone Value", "Standard Position", "User Response", 
             "Correct Response", "Is Correct", "Reaction Time (ms)", 
             "Is Reversal", "Step Direction"
@@ -2287,7 +2291,7 @@ function testEmailSending() {
         
         trialRecords.forEach(function(trial) {
             const row = [
-                trial.trialNumber, '"' + trial.timestamp + '"', trial.direction,
+                '"' + participantId + '"', '"' + sessionNumber + '"', trial.trialNumber, '"' + trial.timestamp + '"', trial.direction,
                 trial.difficultyLevel, trial.semitoneValue, trial.standardPosition,
                 '"' + trial.userResponse + '"', '"' + trial.correctResponse + '"',
                 trial.isCorrect ? "1" : "0", trial.reactionTime,
@@ -2356,6 +2360,8 @@ function exportToCSV() {
     csvRows.push("");
     
     const headers = [
+        "Participant ID",
+        "Session Number",
         "Trial Number", 
         "Timestamp", 
         "Direction", 
@@ -2374,6 +2380,8 @@ function exportToCSV() {
     
     trialRecords.forEach(function(trial) {
         const row = [
+            '"' + participantId + '"',
+            '"' + sessionNumber + '"',
             trial.trialNumber,
             '"' + trial.timestamp + '"',
             trial.direction,

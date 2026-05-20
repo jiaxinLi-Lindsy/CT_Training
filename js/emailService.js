@@ -205,11 +205,17 @@ function sendExperimentResults(params) {
     const csvContent = generateCSVContent(trialRecords, results, experimentInfo);
     const csvBase64 = csvToBase64(csvContent);
     
-    // 生成文件名（包含被试ID、训练场次和时间戳）
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-    const participantPrefix = experimentInfo.participantId ? `${experimentInfo.participantId}` : '';
-    const sessionPrefix = experimentInfo.sessionNumber ? `_Session${experimentInfo.sessionNumber}` : '';
-    const fileName = `${experimentInfo.participantId}${sessionPrefix}_${experimentInfo.type}.csv`;
+    // 生成文件名：CT任务统一为 {participantId}_Session{session}_{task}.csv
+    const participantIdForFile = experimentInfo.participantId || 'N/A';
+    const sessionNumberForFile = experimentInfo.sessionNumber || 'N/A';
+    const currentPage = (window.location.pathname.split('/').pop() || '').toLowerCase();
+    const ctTaskMap = {
+        'ct_level_mid.html': 'CT_Level_Mid',
+        'ct_rising_mid.html': 'CT_Rising_Mid',
+        'ct_falling_mid.html': 'CT_Falling_Mid'
+    };
+    const taskName = ctTaskMap[currentPage] || experimentInfo.type;
+    const fileName = `${participantIdForFile}_Session${sessionNumberForFile}_${taskName}.csv`;
     
     // 准备邮件参数
     const templateParams = {
