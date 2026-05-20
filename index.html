@@ -223,6 +223,10 @@
             transform: scale(1.05);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
+
+        .btn-debug {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
             background: #e8f4f8;
             border-radius: 15px;
             padding: 30px;
@@ -312,10 +316,19 @@
         <div class="intro">
             <h2>歡迎來到音高辨別實驗平台</h2>
             <p>
-                本系統採用三段式音頻播放與 Catch Trial 反應任務，評估您在不同音高條件下的聆聽與定位能力。
-                每組會播放 3 段聲音；大多數情況僅需聆聽，聽到 Ding 後再於播放結束後點擊對應圖形。
-                請先填寫被試信息，再開始完整實驗流程。
+                每次播放 3 段聲音。請判斷是否有 Ding，並點擊「有 / 無」作答。
             </p>
+        </div>
+
+        <div class="info-section" style="background:#fff3cd; border:2px solid #ff9800; margin-top:-10px; margin-bottom:20px;">
+            <h3>🚨 重要作答規則（請務必閱讀）</h3>
+            <ul>
+                <li><strong>開始前準備：</strong>請先完整填寫被試 ID 與訓練場次</li>
+                <li><strong>先熟悉提示音：</strong>可先播放 Ding 示例音，熟悉任務後再開始</li>
+                <li><strong>正式開始：</strong>點擊下方「開始實驗」按鈕後進入正式任務</li>
+                <li><strong>每一題都要作答：</strong>播放完 3 段聲音後，請點擊「有」或「無」，並儘快反應</li>
+                <li><strong>判斷目標：</strong>只判斷本題三段聲音中是否出現 Ding（有 = 出現；無 = 未出現）</li>
+            </ul>
         </div>
 
         <div class="participant-id-section">
@@ -343,6 +356,13 @@
             <div class="error-message" id="errorMessage">⚠️ 請輸入被試ID和訓練場次後再開始實驗</div>
         </div>
 
+        <div class="info-section" style="background:#fff8e1; border:2px solid #ffcc80; margin-top:0; margin-bottom:20px; text-align:center;">
+            <h3>🔊 Ding 聲音示範</h3>
+            <p style="margin-bottom:12px; color:#555;">可先點擊下方按鈕，熟悉 Ding 提示音。</p>
+            <button class="btn btn-debug" onclick="playDingPreview()">播放 Ding 示例音</button>
+            <audio id="dingPreviewAudio" src="Media/ding.mp3" preload="auto"></audio>
+        </div>
+
         <div class="start-experiment-section">
             <div class="experiment-card-single">
                 <div class="experiment-icon">🎯</div>
@@ -359,19 +379,6 @@
                 </p>
                 <button class="btn btn-large" onclick="startExperimentSequence()">🚀 開始實驗</button>
             </div>
-        </div>
-
-        <div class="info-section">
-            <h3>📋 實驗說明</h3>
-            <ul>
-                <li><strong>實驗範式：</strong>每組播放 3 段聲音（含常規試次與 Catch 試次）</li>
-                <li><strong>作答規則：</strong>僅在聽到 Ding 的組別作答，且需在三段播放完成後再點擊對應圖形</li>
-                <li><strong>反應窗口：</strong>Catch 組別開放 1.5 秒點擊收集，超時記為漏反應</li>
-                <li><strong>實驗時長：</strong>每個實驗約需 10-15 分鐘</li>
-                <li><strong>結果輸出：</strong>每個任務單獨導出 CSV（含 Trial 類型、點擊準確率、RT、超時標記）</li>
-                <li><strong>數據導出：</strong>支持導出 CSV 格式的完整逐試次數據</li>
-                <li><strong>建議環境：</strong>請在安靜環境下使用耳機完成實驗，以獲得最佳測試效果</li>
-            </ul>
         </div>
 
         <div class="info-section" style="background: #fff3cd; margin-top: 20px;">
@@ -508,6 +515,20 @@
     // 舊版本兼容性函數（如果有其他地方調用）
     function startExperiment(experimentUrl) {
         startExperimentSequence();
+    }
+
+    function playDingPreview() {
+        const dingAudio = document.getElementById('dingPreviewAudio');
+        if (!dingAudio) {
+            alert('找不到 Ding 音頻文件。');
+            return;
+        }
+
+        dingAudio.currentTime = 0;
+        dingAudio.play().catch((err) => {
+            console.error('Ding preview playback failed:', err);
+            alert('Ding 播放失敗，請檢查瀏覽器音頻權限。');
+        });
     }
 </script>
 </body>

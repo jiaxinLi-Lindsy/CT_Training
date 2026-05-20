@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>POLYU-Peng's Lab: CT_PitchTraining</title>
+    <title>POLYU-Peng's Lab: Pitch Sensitivity Training</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -640,11 +640,11 @@
     <div class="container">
         <div class="header">
             <img src="Media/animation.gif" alt="Experiment animation">
-            <div class="training-info">Level Tone Discrimination (CT)</div>
+            <div class="training-info">Level Tone Discrimination (ABX)</div>
             <div id="experimentProgress" class="experiment-progress" style="display: none;">
                 實驗進度: <span id="progressText">1/3</span>
             </div>
-            <div class="instruction-text">每次會播放 3 段聲音，請認真聽是否有 Ding，並儘快點擊「有」或「無」作答。</div>
+            <div class="instruction-text">請判斷第三個音聽起來更像第一個還是第二個音</div>
         </div>
 
         <div id="experimentContainer">
@@ -653,12 +653,14 @@
                 <input id="viewResult" type="button" value="查看結果" onclick="view_onclick()" class="control-button" disabled>
             </div>
 
-            <div class="prompt-text" id="promptText">請等待聲音播放</div>
+            <div class="prompt-text" id="promptText">
+                第三個音更像...
+            </div>
             
             <div class="button-container">
-                <input id="firstBtn" type="button" value="有" onclick="onResponse(true)" disabled
+                <input id="firstBtn" type="button" value="第一個音" onclick="processAnswer(1)" disabled 
                     class="response-button" style="background:#FF6666;">
-                <input id="secondBtn" type="button" value="無" onclick="onResponse(false)" disabled
+                <input id="secondBtn" type="button" value="第二個音" onclick="processAnswer(2)" disabled 
                     class="response-button" style="background:#FF6666;">
             </div>
 
@@ -691,7 +693,7 @@
         </div>
         
         <div id="resultsContainer" class="results-container">
-            <h2 class="result-heading">Pitch Discrimination Test Results (CT)</h2>
+            <h2 class="result-heading">Pitch Discrimination Test Results (ABX)</h2>
             
             <table class="result-table">
                 <thead>
@@ -831,7 +833,6 @@
     <audio id="level_8_l" src="Media/level_8_l.wav" preload="auto"></audio>
     <audio id="level_9_l" src="Media/level_9_l.wav" preload="auto"></audio>
     <audio id="level_10_l" src="Media/level_10_l.wav" preload="auto"></audio>
-    <audio id="ding_audio" src="Media/ding.mp3" preload="auto"></audio>
 
 <script>
 function getLocalTimestamp() {
@@ -2192,7 +2193,7 @@ function sendLevelMidExperimentResults() {
     const templateParams = {
         participant_id: participantId,
         session_number: sessionNumber,
-        experiment_type: "Level Tone Discrimination (CT) | Hit " + hitPercent + "% | FA " + faPercent + "% | Hit-FA " + hmfaPercent + "%",
+        experiment_type: "Level Tone Discrimination (ABX)",
         start_time: window.experimentStartTime || localStorage.getItem('experimentStartTime') || 'N/A',
         completion_date: new Date().toLocaleString('zh-CN'),
         total_trials: trialRecords.length,
@@ -2303,7 +2304,7 @@ function testEmailSending() {
         const templateParams = {
             participant_id: participantId,
             session_number: sessionNumber,
-            experiment_type: "[TEST] Level Tone Discrimination (CT)",
+            experiment_type: "[TEST] Level Tone Discrimination (ABX)",
             start_time: window.experimentStartTime || 'N/A',
             completion_date: new Date().toLocaleString('zh-CN'),
             total_trials: trialRecords.length,
@@ -2313,7 +2314,7 @@ function testEmailSending() {
             mean_rt: "TEST",
             attachment_name: fileName,
             attachment_content: csvBase64,
-            results_summary: "ACC (Hit_Minus_FA): " + hmfaPercent + "%"
+            results_summary: "This is a TEST email to verify email functionality."
         };
         
         const serviceId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.serviceId) || 'service_exe9d5a';
@@ -2527,427 +2528,6 @@ function displayExperimentProgress() {
         }
     }
 }
-</script>
-<script>
-(function () {
-    const COMPARISON_LEVEL_COUNTS = { 1: 4, 2: 6, 3: 8, 4: 10, 5: 14, 6: 10, 7: 8, 8: 6, 9: 4, 10: 2 };
-    const NONCATCH_TRIALS_PER_DIRECTION = 72;
-    const CATCH_TRIALS_PER_DIRECTION = 8;
-    const GROUP_SIZE = 3;
-    const TOTAL_TRIALS = (NONCATCH_TRIALS_PER_DIRECTION + CATCH_TRIALS_PER_DIRECTION) * 2;
-    const ITI_MS = 1000;
-    const JITTER_MIN_MS = 1000;
-    const JITTER_MAX_MS = 1500;
-
-    let participantId = "N/A";
-    let sessionNumber = "N/A";
-    let trialPlan = [];
-    let trialRecords = [];
-    let running = false;
-    let pendingResponse = null;
-
-    function log(msg) {
-        const area = document.getElementById("debugInfo");
-        if (!area) return;
-        const t = new Date().toLocaleTimeString();
-        area.innerHTML += "<p>[" + t + "] " + msg + "</p>";
-        area.scrollTop = area.scrollHeight;
-    }
-
-    function shuffle(arr) {
-        const out = arr.slice();
-        for (let i = out.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const tmp = out[i];
-            out[i] = out[j];
-            out[j] = tmp;
-        }
-        return out;
-    }
-
-    function randomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    function delay(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-    }
-
-    async function playAudio(audio) {
-        if (!audio) throw new Error("Missing audio element");
-        audio.currentTime = 0;
-        await audio.play();
-        await new Promise((resolve) => { audio.onended = () => resolve(); });
-    }
-
-    function buildComparisonPool() {
-        const pool = [];
-        Object.keys(COMPARISON_LEVEL_COUNTS).forEach((key) => {
-            const level = parseInt(key, 10);
-            for (let i = 0; i < COMPARISON_LEVEL_COUNTS[level]; i++) pool.push(level);
-        });
-        if (pool.length !== NONCATCH_TRIALS_PER_DIRECTION) throw new Error("Comparison pool size mismatch.");
-        return shuffle(pool);
-    }
-
-    function buildCatchTrialIndices(totalTrials, catchTrials) {
-        const indices = [];
-        let attempts = 0;
-        while (indices.length < catchTrials && attempts < 10000) {
-            attempts++;
-            const candidate = randomInt(0, totalTrials - 1);
-            if (indices.every((g) => Math.abs(g - candidate) >= 2)) indices.push(candidate);
-        }
-        if (indices.length < catchTrials) throw new Error("Failed to place catch trials.");
-        return indices.sort((a, b) => a - b);
-    }
-
-    function buildTrialPlan() {
-        const perDirectionTrialCount = NONCATCH_TRIALS_PER_DIRECTION + CATCH_TRIALS_PER_DIRECTION;
-        const highComparisonPool = buildComparisonPool();
-        const lowComparisonPool = buildComparisonPool();
-        const highCatchTrials = new Set(buildCatchTrialIndices(perDirectionTrialCount, CATCH_TRIALS_PER_DIRECTION));
-        const lowCatchTrials = new Set(buildCatchTrialIndices(perDirectionTrialCount, CATCH_TRIALS_PER_DIRECTION));
-        const templates = [];
-
-        for (let ti = 0; ti < perDirectionTrialCount; ti++) {
-            templates.push({ direction: "h", isCatch: highCatchTrials.has(ti) });
-            templates.push({ direction: "l", isCatch: lowCatchTrials.has(ti) });
-        }
-        const shuffledTemplates = shuffle(templates);
-        const trials = [];
-        for (let trialNumber = 1; trialNumber <= TOTAL_TRIALS; trialNumber++) {
-            const template = shuffledTemplates[trialNumber - 1];
-            const direction = template.direction;
-            const trialCondition = direction === "h" ? "Level_High" : "Level_Low";
-            if (template.isCatch) {
-                const dingPos = randomInt(1, 3);
-                trials.push({
-                    Trial_Number: trialNumber,
-                    Condition: trialCondition,
-                    Trial_Type: "Catch",
-                    Standard_Is_First: null,
-                    X_Is_Standard: null,
-                    Ding_Position: dingPos,
-                    Stimulus_Level: null,
-                    Stimulus_Direction: direction,
-                    Correct_Answer: true
-                });
-            } else {
-                const standardIsFirst = Math.random() < 0.5;
-                const xIsStandard = Math.random() < 0.5;
-                const pool = direction === "h" ? highComparisonPool : lowComparisonPool;
-                const comparisonLevel = pool.shift();
-                trials.push({
-                    Trial_Number: trialNumber,
-                    Condition: trialCondition,
-                    Trial_Type: "Noncatch",
-                    Standard_Is_First: standardIsFirst,
-                    X_Is_Standard: xIsStandard,
-                    Ding_Position: null,
-                    Stimulus_Level: comparisonLevel,
-                    Stimulus_Direction: direction,
-                    Correct_Answer: false
-                });
-            }
-        }
-        if (highComparisonPool.length !== 0 || lowComparisonPool.length !== 0) {
-            throw new Error("Comparison pool not fully consumed.");
-        }
-        return trials;
-    }
-
-    function getAudioByLevel(level, suffix) {
-        return document.getElementById("level_" + level + "_" + suffix);
-    }
-
-    function getBaseAudio() {
-        return document.getElementById("standard");
-    }
-
-    function setButtonsEnabled(enabled) {
-        ["firstBtn", "secondBtn"].forEach((id) => {
-            const btn = document.getElementById(id);
-            if (btn) btn.disabled = !enabled;
-        });
-    }
-
-    function updateProgress() {
-        const done = trialRecords.length;
-        const percent = Math.round((done / TOTAL_TRIALS) * 100);
-        const bar = document.getElementById("progressBar");
-        const label = document.getElementById("progressLabel");
-        if (bar) bar.style.width = percent + "%";
-        if (label) label.textContent = "Progress: " + percent + "%";
-    }
-
-    function getDetectionStats() {
-        const catchTrials = trialRecords.filter((r) => r.Trial_Type === "Catch");
-        const noncatchTrials = trialRecords.filter((r) => r.Trial_Type === "Noncatch");
-        const catchTotal = catchTrials.length;
-        const noncatchTotal = noncatchTrials.length;
-        const hitCount = catchTrials.filter((r) => r.User_Response === "有").length;
-        const falseAlarmCount = noncatchTrials.filter((r) => r.User_Response === "有").length;
-        const hitRate = catchTotal > 0 ? (hitCount / catchTotal) : 0;
-        const falseAlarmRate = noncatchTotal > 0 ? (falseAlarmCount / noncatchTotal) : 0;
-        const correctedScore = hitRate - falseAlarmRate;
-        return { hitCount, catchTotal, falseAlarmCount, noncatchTotal, hitRate, falseAlarmRate, correctedScore };
-    }
-
-    function getCatchAccuracyStats() {
-        const stats = getDetectionStats();
-        return { correct: stats.hitCount, total: stats.catchTotal, accuracy: stats.hitRate };
-    }
-
-    function onResponse(answeredYes) {
-        if (!pendingResponse) return;
-        if (pendingResponse.resolved) return;
-        pendingResponse.resolved = true;
-        const rt = Math.round(performance.now() - pendingResponse.startTime);
-        pendingResponse.resolve({
-            User_Response: answeredYes ? "有" : "無",
-            Is_Clicked: true,
-            Click_Accuracy: answeredYes === pendingResponse.correctAnswer,
-            RT: rt,
-            Is_Timeout: false
-        });
-    }
-
-    async function waitForResponse(correctAnswer) {
-        setButtonsEnabled(true);
-        document.getElementById("promptText").style.visibility = "visible";
-        document.getElementById("promptText").textContent = "三段聲音中是否有 Ding？請儘快點擊「有」或「無」";
-        document.getElementById("firstBtn").style.background = "#66CCFF";
-        document.getElementById("secondBtn").style.background = "#66CCFF";
-        const result = await new Promise((resolve) => {
-            pendingResponse = {
-                correctAnswer: correctAnswer,
-                startTime: performance.now(),
-                resolved: false,
-                resolve: resolve
-            };
-        });
-        pendingResponse = null;
-        setButtonsEnabled(false);
-        document.getElementById("firstBtn").style.background = "#FF6666";
-        document.getElementById("secondBtn").style.background = "#FF6666";
-        document.getElementById("promptText").style.visibility = "hidden";
-        return result;
-    }
-
-    async function runTrial(trial) {
-        const timestamp = new Date().toISOString();
-        const dir = trial.Stimulus_Direction || "h";
-
-        if (trial.Trial_Type === "Noncatch") {
-            const standardAudio = getBaseAudio();
-            const comparisonAudio = getAudioByLevel(trial.Stimulus_Level, dir);
-            if (!comparisonAudio) throw new Error("Missing level audio: " + trial.Stimulus_Level + "_" + dir);
-            const firstSound = trial.Standard_Is_First ? standardAudio : comparisonAudio;
-            const secondSound = trial.Standard_Is_First ? comparisonAudio : standardAudio;
-            const xSound = trial.X_Is_Standard ? standardAudio : comparisonAudio;
-
-            document.getElementById("text1").value = "播放第 1 段聲音";
-            await playAudio(firstSound);
-            await delay(ITI_MS);
-            document.getElementById("text1").value = "播放第 2 段聲音";
-            await playAudio(secondSound);
-            await delay(ITI_MS);
-            document.getElementById("text1").value = "播放第 3 段聲音";
-            await playAudio(xSound);
-        } else {
-            for (let pos = 1; pos <= GROUP_SIZE; pos++) {
-                document.getElementById("text1").value = "播放第 " + pos + " 段聲音";
-                if (pos === trial.Ding_Position) {
-                    await playAudio(document.getElementById("ding_audio"));
-                } else {
-                    await playAudio(getBaseAudio());
-                }
-                if (pos < GROUP_SIZE) await delay(ITI_MS);
-            }
-        }
-
-        document.getElementById("text1").value = "請儘快作答：是否有 Ding？";
-        const responseData = await waitForResponse(trial.Correct_Answer);
-
-        trialRecords.push({
-            Participant_ID: participantId,
-            Session_Number: sessionNumber,
-            Trial_Number: trial.Trial_Number,
-            Condition: trial.Condition,
-            Trial_Type: trial.Trial_Type,
-            Standard_Is_First: trial.Standard_Is_First,
-            X_Is_Standard: trial.X_Is_Standard,
-            Ding_Position: trial.Ding_Position,
-            Stimulus_Level: trial.Stimulus_Level,
-            User_Response: responseData.User_Response,
-            Is_Clicked: responseData.Is_Clicked,
-            Click_Accuracy: responseData.Click_Accuracy,
-            RT: responseData.RT,
-            Is_Timeout: responseData.Is_Timeout,
-            Timestamp: timestamp
-        });
-        updateProgress();
-    }
-
-    async function runExperiment() {
-        running = true;
-        setButtonsEnabled(false);
-        for (let i = 0; i < trialPlan.length; i++) {
-            document.getElementById("text1").value = "第 " + (i + 1) + " 試次 / " + TOTAL_TRIALS;
-            await runTrial(trialPlan[i]);
-            const jitter = randomInt(JITTER_MIN_MS, JITTER_MAX_MS);
-            await delay(jitter);
-        }
-        running = false;
-        const stats = getDetectionStats();
-        document.getElementById("text1").value = "實驗完成｜Hit: " + Math.round(stats.hitRate * 100) + "% (" + stats.hitCount + "/" + stats.catchTotal + ")" +
-            "｜FA: " + Math.round(stats.falseAlarmRate * 100) + "% (" + stats.falseAlarmCount + "/" + stats.noncatchTotal + ")" +
-            "｜Hit-FA: " + Math.round(stats.correctedScore * 100) + "%";
-        document.getElementById("start").disabled = false;
-        document.getElementById("viewResult").disabled = false;
-    }
-
-    function ensureParticipantInfo() {
-        const urlParams = new URLSearchParams(window.location.search);
-        participantId = urlParams.get("participantId") || localStorage.getItem("participantId") || "";
-        sessionNumber = urlParams.get("sessionNumber") || localStorage.getItem("sessionNumber") || "";
-        if (!participantId) participantId = window.prompt("請輸入 Participant ID") || "";
-        if (!sessionNumber) sessionNumber = window.prompt("請輸入 Session Number") || "";
-        if (!participantId || !sessionNumber) return false;
-        localStorage.setItem("participantId", participantId);
-        localStorage.setItem("sessionNumber", sessionNumber);
-        return true;
-    }
-
-    function start_onclick() {
-        if (running) return;
-        if (!ensureParticipantInfo()) {
-            alert("Participant ID 與 Session Number 為必填");
-            return;
-        }
-        trialPlan = buildTrialPlan();
-        trialRecords = [];
-        updateProgress();
-        document.getElementById("start").disabled = true;
-        document.getElementById("viewResult").disabled = true;
-        runExperiment().catch((err) => {
-            running = false;
-            document.getElementById("start").disabled = false;
-            log("Experiment error: " + err.message);
-            alert("實驗流程出錯: " + err.message);
-        });
-    }
-
-    const CSV_HEADERS = [
-        "Participant_ID", "Session_Number", "Trial_Number", "Condition", "Trial_Type",
-        "Standard_Is_First", "X_Is_Standard", "Ding_Position", "Stimulus_Level",
-        "User_Response", "Is_Clicked", "Click_Accuracy", "RT", "Is_Timeout", "Timestamp"
-    ];
-
-    function rowToCSV(r) {
-        return [
-            r.Participant_ID, r.Session_Number, r.Trial_Number, r.Condition, r.Trial_Type,
-            r.Standard_Is_First === null ? "" : (r.Standard_Is_First ? "True" : "False"),
-            r.X_Is_Standard === null ? "" : (r.X_Is_Standard ? "True" : "False"),
-            r.Ding_Position === null ? "" : r.Ding_Position,
-            r.Stimulus_Level === null ? "" : r.Stimulus_Level,
-            r.User_Response,
-            r.Is_Clicked ? "True" : "False",
-            r.Click_Accuracy ? "True" : "False",
-            r.RT === null ? "" : r.RT,
-            r.Is_Timeout ? "True" : "False",
-            r.Timestamp
-        ].join(",");
-    }
-
-    function exportToCSV() {
-        if (trialRecords.length === 0) { alert("暫無可導出資料"); return; }
-        const rows = [CSV_HEADERS.join(",")];
-        trialRecords.forEach((r) => rows.push(rowToCSV(r)));
-        const stats = getDetectionStats();
-        const summaryRows = [
-            ["Summary", "Hit_Rate", Math.round(stats.hitRate * 100) + "%", stats.hitCount + "/" + stats.catchTotal],
-            ["Summary", "False_Alarm_Rate", Math.round(stats.falseAlarmRate * 100) + "%", stats.falseAlarmCount + "/" + stats.noncatchTotal],
-            ["Summary", "Hit_Minus_FA", Math.round(stats.correctedScore * 100) + "%", ""]
-        ];
-        summaryRows.forEach((row) => rows.push(row.join(",")));
-        const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "CT_level_task_" + new Date().toISOString().replace(/[:.]/g, "-") + ".csv";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-
-    function testEmailSendingV2() {
-        if (typeof emailjs === "undefined") { alert("EmailJS 未加載，請檢查網絡後重試。"); return; }
-        if (trialRecords.length === 0) { alert("沒有可發送的實驗數據。"); return; }
-        const participant = participantId || localStorage.getItem("participantId") || "N/A";
-        const session = sessionNumber || localStorage.getItem("sessionNumber") || "N/A";
-        const stats = getDetectionStats();
-        const hitPercent = Math.round(stats.hitRate * 100);
-        const faPercent = Math.round(stats.falseAlarmRate * 100);
-        const hmfaPercent = Math.round(stats.correctedScore * 100);
-        const rows = [CSV_HEADERS.join(",")];
-        trialRecords.forEach((r) => rows.push(rowToCSV(r)));
-        const summaryRows = [
-            ["Summary", "Hit_Rate", hitPercent + "%", stats.hitCount + "/" + stats.catchTotal],
-            ["Summary", "False_Alarm_Rate", faPercent + "%", stats.falseAlarmCount + "/" + stats.noncatchTotal],
-            ["Summary", "Hit_Minus_FA", hmfaPercent + "%", ""]
-        ];
-        summaryRows.forEach((row) => rows.push(row.join(",")));
-        const csvBase64 = btoa(unescape(encodeURIComponent("\uFEFF" + rows.join("\n"))));
-        const templateParams = {
-            participant_id: participant,
-            session_number: session,
-            experiment_type: "[TEST] CT Level Task | Hit " + hitPercent + "% | FA " + faPercent + "% | Hit-FA " + hmfaPercent + "%",
-            completion_date: new Date().toLocaleString("zh-CN"),
-            total_trials: trialRecords.length,
-            attachment_name: `TEST_CT_${participant}_Session${session}_LevelTask_Hit${hitPercent}_FA${faPercent}_HMFA${hmfaPercent}.csv`,
-            attachment_content: csvBase64,
-            results_summary: "ACC (Hit_Minus_FA): " + hmfaPercent + "%"
-        };
-        const serviceId = (typeof EMAIL_CONFIG !== "undefined" && EMAIL_CONFIG.serviceId) || "service_exe9d5a";
-        const templateId = (typeof EMAIL_CONFIG !== "undefined" && EMAIL_CONFIG.templateId) || "template_4c3g3ss";
-        emailjs.send(serviceId, templateId, templateParams).then(() => {
-            alert("測試郵件發送成功。");
-        }).catch((error) => {
-            const msg = (error && (error.text || error.message)) || JSON.stringify(error);
-            alert("測試郵件發送失敗: " + msg);
-            log("Email send failed: " + msg);
-        });
-    }
-
-    function window_onload() {
-        setButtonsEnabled(false);
-        document.getElementById("promptText").style.visibility = "hidden";
-        document.getElementById("text1").value = "請點擊「開始實驗」";
-        const showDebug = document.getElementById("showDebug");
-        if (showDebug) {
-            showDebug.checked = true;
-            const debugArea = document.getElementById("debugInfo");
-            if (debugArea) debugArea.style.display = "block";
-        }
-    }
-
-    window.onResponse = onResponse;
-    window.onCircleClick = function () {};
-    window.processAnswer = function () {};
-    window.start_onclick = start_onclick;
-    window.exportToCSV = exportToCSV;
-    window.testEmailSending = testEmailSendingV2;
-    window.view_onclick = function () {
-        const stats = getDetectionStats();
-        alert("Hit Rate: " + Math.round(stats.hitRate * 100) + "% (" + stats.hitCount + "/" + stats.catchTotal + ")\n" +
-            "False Alarm Rate: " + Math.round(stats.falseAlarmRate * 100) + "% (" + stats.falseAlarmCount + "/" + stats.noncatchTotal + ")\n" +
-            "Hit-FA: " + Math.round(stats.correctedScore * 100) + "%\n\n此版本以 CSV 明細為主，請使用 Export Data (CSV)。");
-    };
-    window.backToExperiment = function () { document.getElementById("resultsContainer").style.display = "none"; };
-    window.window_onload = window_onload;
-    window.onload = window_onload;
-})();
 </script>
 </body>
 </html>

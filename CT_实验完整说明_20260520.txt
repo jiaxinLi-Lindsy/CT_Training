@@ -1,0 +1,141 @@
+CT_PitchTraining 实验完整说明（Control Training 版本）
+更新日期：2026-05-20
+
+一、实验目的与总体结构
+1) 实验目的
+本实验用于评估被试在多种音高条件下对提示音（Ding）的听觉检测表现（control training 组）.
+
+2) 条件（Condition）
+共 4 个条件：
+- Level_High
+- Level_Low
+- Rising
+- Falling
+
+其中：
+- Level_High 与 Level_Low 在同一个 Level 任务页面中呈现。
+- Rising 与 Falling 分别在独立任务页面中呈现。
+
+3) Trial 定义
+1 个 Trial 包含 3 个声音刺激（Stimuli）。
+
+4) 试次数量
+- 每个条件：72 个 Noncatch + 8 个 Catch = 80 Trials
+- 4 个条件合计：320 Trials
+
+二、首页（封面）流程
+1) 被试需在首页填写：
+- Participant ID
+- Session Number
+
+2) 首页提供 Ding 示例音按钮（Media/ding.mp3）：
+- 被试可在正式开始前先试听，熟悉 Ding 声音特征。
+
+3) 点击“开始实验”后：
+- 系统校验被试信息是否完整。
+- 通过后按随机顺序进入三个任务页面（Level / Rising / Falling）。
+
+三、刺激与分布规则
+1) Noncatch Trial（无 Ding）
+采用 ABX 风格 3 声音结构：
+- 前两段为 Standard 与 Comparison（顺序随机）
+- 第三段 X 为 Standard 或 Comparison（随机）
+- 被试任务：仍仅判断“三段声音中是否有 Ding”（答案应为“无”）
+
+2) Catch Trial（有 Ding）
+- 结构：2 个 Standard + 1 个 Ding
+- Ding 在 3 个位置中随机出现
+- 被试任务：判断“三段声音中是否有 Ding”（答案应为“有”）
+
+3) Comparison Level 分布（每个条件独立）
+在每个条件的 72 个 Noncatch Trials 中，Comparison Level 分布固定为：
+- Level 1: 4
+- Level 2: 6
+- Level 3: 8
+- Level 4: 10
+- Level 5: 14
+- Level 6: 10
+- Level 7: 8
+- Level 8: 6
+- Level 9: 4
+- Level 10: 2
+合计：72
+
+四、时间线与交互
+1) Trial 内播放时间线
+- 播放 Stimulus 1
+- ITI 1000 ms
+- 播放 Stimulus 2
+- ITI 1000 ms
+- 播放 Stimulus 3
+
+2) Trial 间隔
+- Jitter 随机范围：1000–1500 ms
+
+3) 作答方式
+- 每个 Trial 播放完后都必须作答：
+  - “有” = 听到 Ding
+  - “无” = 未听到 Ding
+- 系统在作答后进入下一 Trial。
+
+五、数据记录与导出
+1) 逐 Trial 记录（CSV 每行一条 Trial）
+核心字段包括：
+- Participant_ID
+- Session_Number
+- Trial_Number
+- Condition
+- Trial_Type（Catch / Noncatch）
+- Standard_Is_First
+- X_Is_Standard
+- Ding_Position
+- Stimulus_Level
+- User_Response（有/无）
+- Is_Clicked
+- Click_Accuracy
+- RT
+- Is_Timeout
+- Timestamp
+
+2) CSV 额外汇总（Summary）
+在明细后追加 3 个检测指标：
+- Hit_Rate
+- False_Alarm_Rate
+- Hit_Minus_FA
+
+六、三项检测指标定义
+1) Hit Rate
+在 Catch Trials 中回答“有”的比例。
+- Hit Rate = hitCount / catchTotal
+
+2) False Alarm Rate
+在 Noncatch Trials 中错误回答“有”的比例。
+- False Alarm Rate = falseAlarmCount / noncatchTotal
+
+3) ACC（Hit_Minus_FA）
+- ACC = Hit Rate - False Alarm Rate
+- 该值用于校正“误报”影响，更能反映检测能力。
+
+七、结果展示与邮件发送
+1) 任务页面结束提示
+实验结束后页面会显示：
+- Hit Rate
+- False Alarm Rate
+- Hit-FA
+
+2) 查看结果弹窗
+显示同样 3 个指标。
+
+3) 邮件正文（results_summary）
+邮件正文仅发送：
+- ACC (Hit_Minus_FA): xx%
+
+4) 邮件标题与附件名
+邮件标题与附件名中包含指标信息（如 Hit / FA / Hit-FA），便于快速识别被试表现。
+
+八、注意事项
+1) 建议使用耳机并在安静环境中进行。
+2) 首次播放时若浏览器请求音频权限，请允许。
+3) 任务过程中请保持专注，避免中断。
+
+—— 完 ——
