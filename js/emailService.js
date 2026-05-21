@@ -308,11 +308,23 @@ function sendCurrentExperimentResults() {
     const participantId = getParticipantId();
     const sessionNumber = getSessionNumber();
     
+    const currentPage = (window.location.pathname.split('/').pop() || '').toLowerCase();
+    const taskStartTimeKeys = {
+        'ct_level_mid.html': 'experimentStartTime_CT_Level_Mid',
+        'ct_rising_mid.html': 'experimentStartTime_CT_Rising_Mid',
+        'ct_falling_mid.html': 'experimentStartTime_CT_Falling_Mid'
+    };
+    const taskStartTimeKey = taskStartTimeKeys[currentPage];
+    const resolvedStartTime = window.experimentStartTime ||
+        (taskStartTimeKey ? localStorage.getItem(taskStartTimeKey) : null) ||
+        localStorage.getItem('experimentStartTime') ||
+        'N/A';
+
     const experimentInfo = {
         participantId: participantId,
         sessionNumber: sessionNumber,
         type: document.querySelector('.training-info')?.textContent || 'Pitch Training',
-        startTime: window.experimentStartTime || localStorage.getItem('experimentStartTime') || 'N/A',
+        startTime: resolvedStartTime,
         completionDate: new Date().toLocaleString('zh-CN'),
         totalTrials: window.numberOfIterations || trialRecords.length,
         totalReversals: window.NumberOfReversals || 0,

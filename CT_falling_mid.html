@@ -2421,6 +2421,10 @@ function displayExperimentProgress() {
             alert("Participant ID 與 Session Number 為必填");
             return;
         }
+        const startTime = new Date().toLocaleString("zh-CN");
+        window.experimentStartTime = startTime;
+        localStorage.setItem("experimentStartTime", startTime);
+        localStorage.setItem("experimentStartTime_CT_Falling_Mid", startTime);
         trialPlan = buildTrialPlan();
         trialRecords = [];
         updateProgress();
@@ -2500,6 +2504,7 @@ function displayExperimentProgress() {
             participant_id: participant,
             session_number: session,
             experiment_type: "[TEST] CT Falling Task | Hit " + hitPercent + "% | FA " + faPercent + "% | Hit-FA " + hmfaPercent + "%",
+            start_time: window.experimentStartTime || localStorage.getItem("experimentStartTime_CT_Falling_Mid") || localStorage.getItem("experimentStartTime") || "N/A",
             completion_date: new Date().toLocaleString("zh-CN"),
             total_trials: trialRecords.length,
             attachment_name: `${participant}_Session${session}_CT_Falling_Mid.csv`,
