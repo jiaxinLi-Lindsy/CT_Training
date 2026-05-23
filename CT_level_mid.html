@@ -2805,6 +2805,16 @@ function displayExperimentProgress() {
             "｜Hit-FA: " + Math.round(stats.correctedScore * 100) + "%";
         document.getElementById("start").disabled = false;
         document.getElementById("viewResult").disabled = false;
+
+        // 结束后自动发送邮件；由 emailService 在发送成功后跳转到下一个任务
+        if (!emailSent) {
+            emailSent = true;
+            if (typeof sendCurrentExperimentResults === "function") {
+                sendCurrentExperimentResults();
+            } else {
+                log("Email service unavailable; cannot auto-send or auto-navigate.");
+            }
+        }
     }
 
     function ensureParticipantInfo() {
@@ -2825,6 +2835,7 @@ function displayExperimentProgress() {
             alert("Participant ID 與 Session Number 為必填");
             return;
         }
+        emailSent = false;
         const startTime = new Date().toLocaleString("zh-CN");
         window.experimentStartTime = startTime;
         localStorage.setItem("experimentStartTime", startTime);
