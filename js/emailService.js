@@ -228,10 +228,12 @@ function sendExperimentResults(params) {
         total_reversals: experimentInfo.totalReversals || 'N/A',
         jnd_value: results.jndAbsoluteDifference ? results.jndAbsoluteDifference.toFixed(2) + ' ms' : 'N/A',
         accuracy: experimentInfo.accuracy || 'N/A',
+        hit_rate: experimentInfo.hitRate || 'N/A',
+        false_alarm_rate: experimentInfo.falseAlarmRate || 'N/A',
+        hit_minus_fa: experimentInfo.hitMinusFA || 'N/A',
         mean_rt: experimentInfo.meanRT || 'N/A',
         attachment_name: fileName,
         attachment_content: csvBase64,
-        // 添加简短的结果摘要
         results_summary: generateResultsSummary(results, experimentInfo)
     };
     
@@ -277,6 +279,18 @@ function generateResultsSummary(results, experimentInfo) {
         summary += `JND Percentage: ${results.jndPercentDifference.toFixed(2)}%\n`;
     }
     
+    if (experimentInfo.hitRate) {
+        summary += `Hit Rate: ${experimentInfo.hitRate}\n`;
+    }
+
+    if (experimentInfo.falseAlarmRate) {
+        summary += `False Alarm Rate: ${experimentInfo.falseAlarmRate}\n`;
+    }
+
+    if (experimentInfo.hitMinusFA) {
+        summary += `Hit - FA: ${experimentInfo.hitMinusFA}\n`;
+    }
+
     if (experimentInfo.accuracy) {
         summary += `Accuracy: ${experimentInfo.accuracy}\n`;
     }
@@ -320,6 +334,7 @@ function sendCurrentExperimentResults() {
         localStorage.getItem('experimentStartTime') ||
         'N/A';
 
+    const detectionStats = (typeof window.getDetectionStats === 'function') ? window.getDetectionStats() : null;
     const experimentInfo = {
         participantId: participantId,
         sessionNumber: sessionNumber,
@@ -329,6 +344,9 @@ function sendCurrentExperimentResults() {
         totalTrials: window.numberOfIterations || trialRecords.length,
         totalReversals: window.NumberOfReversals || 0,
         accuracy: calculateAccuracyForEmail(),
+        hitRate: detectionStats ? Math.round(detectionStats.hitRate * 100) + '%' : 'N/A',
+        falseAlarmRate: detectionStats ? Math.round(detectionStats.falseAlarmRate * 100) + '%' : 'N/A',
+        hitMinusFA: detectionStats ? Math.round(detectionStats.correctedScore * 100) + '%' : 'N/A',
         meanRT: calculateMeanRTForEmail()
     };
     
