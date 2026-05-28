@@ -690,62 +690,36 @@
             </div>
         </div>
         
-        <div id="resultsContainer" class="results-container">
-            <h2 class="result-heading">Pitch Discrimination Test Results (CT)</h2>
-            
+        <div id="resultsContainer" class="results-container" style="display:none;">
+            <h2 class="result-heading">Level Pitch Detection Results (CT)</h2>
+
+            <div class="highlight-box">
+                <h3 style="margin-top: 0;">Hit − FA（校正分）</h3>
+                <div class="highlight-value" id="hitMinusFAValue">--</div>
+                <p style="margin-bottom: 0; font-size: 14px; color: #666;">
+                    Hit Rate − False Alarm Rate<br>
+                    <strong>數值越高 = 辨別能力越好</strong>
+                </p>
+            </div>
+
+            <h3>Detection Statistics</h3>
             <table class="result-table">
                 <thead>
                     <tr>
-                        <th>Test Direction</th>
-                        <th>Threshold (semitones)</th>
-                        <th>Std. Deviation</th>
-                        <th>Assessment</th>
+                        <th>指標</th>
+                        <th>百分比</th>
+                        <th>計數</th>
                     </tr>
                 </thead>
-                <tbody id="resultTableBody">
-                </tbody>
+                <tbody id="detectionStatsBody"></tbody>
             </table>
-            
-            <div class="result-interpretation" id="resultInterpretation">
-            </div>
-            
-            <h3>Reaction Time Statistics</h3>
-            <table class="result-table" id="rtStatsTable">
-                <thead>
-                    <tr>
-                        <th>Direction</th>
-                        <th>Mean RT (ms)</th>
-                        <th>Median RT (ms)</th>
-                        <th>RT Std. Deviation</th>
-                    </tr>
-                </thead>
-                <tbody id="rtStatsTableBody">
-                </tbody>
-            </table>
-            
-            <h3>Accuracy Statistics</h3>
-            <table class="result-table" id="accuracyStatsTable">
-                <thead>
-                    <tr>
-                        <th>Direction</th>
-                        <th>Correct Responses</th>
-                        <th>Total Responses</th>
-                        <th>Accuracy</th>
-                    </tr>
-                </thead>
-                <tbody id="accuracyStatsTableBody">
-                </tbody>
-            </table>
-            
-            <div class="chart-container" id="resultChart">
-            </div>
-            
+
             <button class="print-button" onclick="printResults()">Print Results</button>
-            
+
             <div class="auxiliary-buttons" style="margin-top: 20px;">
                 <button onclick="exportToCSV()">Export Data (CSV)</button>
             </div>
-            
+
             <button class="back-button" onclick="backToExperiment()">Back to Experiment</button>
         </div>
         
@@ -753,52 +727,28 @@
             <div class="diagnostic-content">
                 <span class="diagnostic-close" onclick="closeDiagnostics()">&times;</span>
                 <h2 class="diagnostic-heading">Experiment Diagnostics</h2>
-                
+
                 <div class="diagnostic-section">
                     <h3>Test Status</h3>
                     <table class="statistics-table">
                         <tr>
-                            <th>Direction</th>
-                            <th>Trials</th>
-                            <th>Reversals</th>
+                            <th>Trials Completed</th>
                             <th>Status</th>
                         </tr>
                         <tr>
-                            <td>Higher Direction</td>
-                            <td id="higherTrials">0</td>
-                            <td id="higherReversals">0</td>
-                            <td id="higherStatus">Not started</td>
-                        </tr>
-                        <tr>
-                            <td>Lower Direction</td>
-                            <td id="lowerTrials">0</td>
-                            <td id="lowerReversals">0</td>
-                            <td id="lowerStatus">Not started</td>
+                            <td id="totalTrials">0</td>
+                            <td id="testStatus">Not started</td>
                         </tr>
                     </table>
                 </div>
-                
+
                 <div class="diagnostic-section">
                     <h3>Audio Files Check</h3>
                     <p>Verifying necessary audio files:</p>
-                    <div id="audioFileStatus" class="diagnostic-file-status">
-                    </div>
+                    <div id="audioFileStatus" class="diagnostic-file-status"></div>
                 </div>
-                
-                <div class="diagnostic-section">
-                    <h3>Reversal History</h3>
-                    <div id="reversalHistory">
-                    </div>
-                </div>
-                
-                <div class="diagnostic-section">
-                    <h3>Recommendations</h3>
-                    <div id="diagnosticRecommendations">
-                    </div>
-                </div>
-                
+
                 <div class="diagnostic-actions">
-                    <button class="diagnostic-action-button retry-button" onclick="retryIncompleteDirection()">Retry Incomplete Direction</button>
                     <button class="diagnostic-action-button continue-button" onclick="closeDiagnostics()">Close</button>
                 </div>
             </div>
@@ -1300,12 +1250,80 @@
         }
         emailjs.send(serviceId, templateId, templateParams).then(function() {
             log("Auto email sent successfully.");
+            alert("實驗結果已成功發送到指定郵箱！\n即將進入下一個任務。");
             navigate();
         }).catch(function(error) {
-            log("Auto email send failed: " + ((error && (error.text || error.message)) || JSON.stringify(error)));
+            const msg = (error && (error.text || error.message)) || JSON.stringify(error);
+            log("Auto email send failed: " + msg);
+            alert("郵件發送失敗：" + msg + "\n即將繼續下一個任務。");
             navigate();
         });
     }
+
+    function toggleDebug() {
+        const cb = document.getElementById("showDebug");
+        const area = document.getElementById("debugInfo");
+        if (area) area.style.display = (cb && cb.checked) ? "block" : "none";
+    }
+
+    function testAudio() {
+        const ids = [
+            "standard",
+            "level_1_h","level_2_h","level_3_h","level_4_h","level_5_h",
+            "level_6_h","level_7_h","level_8_h","level_9_h","level_10_h",
+            "level_1_l","level_2_l","level_3_l","level_4_l","level_5_l",
+            "level_6_l","level_7_l","level_8_l","level_9_l","level_10_l",
+            "ding_audio"
+        ];
+        let i = 0;
+        function playNext() {
+            if (i >= ids.length) { log("All audio files tested."); return; }
+            const id = ids[i++];
+            const el = document.getElementById(id);
+            if (!el) { log("Missing audio element: " + id); setTimeout(playNext, 100); return; }
+            el.currentTime = 0;
+            el.play().then(function() {
+                log("Playing: " + id);
+                el.onended = function() { setTimeout(playNext, 300); };
+            }).catch(function(e) {
+                log("Failed: " + id + " - " + e.message);
+                setTimeout(playNext, 300);
+            });
+        }
+        playNext();
+    }
+
+    function showDiagnostics() {
+        const overlay = document.getElementById("diagnosticOverlay");
+        if (overlay) overlay.style.display = "flex";
+        const el = document.getElementById("totalTrials");
+        if (el) el.textContent = trialRecords.length;
+        const st = document.getElementById("testStatus");
+        if (st) st.textContent = running ? "Running" : (trialRecords.length > 0 ? "Completed" : "Not started");
+        const ids = [
+            "standard",
+            "level_1_h","level_2_h","level_3_h","level_4_h","level_5_h",
+            "level_6_h","level_7_h","level_8_h","level_9_h","level_10_h",
+            "level_1_l","level_2_l","level_3_l","level_4_l","level_5_l",
+            "level_6_l","level_7_l","level_8_l","level_9_l","level_10_l",
+            "ding_audio"
+        ];
+        const statusEl = document.getElementById("audioFileStatus");
+        if (statusEl) {
+            statusEl.innerHTML = ids.map(function(id) {
+                const audio = document.getElementById(id);
+                const ok = audio && audio.readyState >= 2;
+                return '<div style="color:' + (ok ? "green" : "red") + '">' + (ok ? "✓" : "✗") + " " + id + "</div>";
+            }).join("");
+        }
+    }
+
+    function closeDiagnostics() {
+        const overlay = document.getElementById("diagnosticOverlay");
+        if (overlay) overlay.style.display = "none";
+    }
+
+    function printResults() { window.print(); }
 
     window.onResponse = onResponse;
     window.onCircleClick = function () {};
@@ -1313,11 +1331,31 @@
     window.start_onclick = start_onclick;
     window.exportToCSV = exportToCSV;
     window.testEmailSending = testEmailSendingV2;
+    window.testAudio = testAudio;
+    window.toggleDebug = toggleDebug;
+    window.showDiagnostics = showDiagnostics;
+    window.closeDiagnostics = closeDiagnostics;
+    window.printResults = printResults;
     window.view_onclick = function () {
+        if (trialRecords.length === 0) { alert("尚無實驗數據，請先完成實驗。"); return; }
         const stats = getDetectionStats();
-        alert("Hit Rate: " + Math.round(stats.hitRate * 100) + "% (" + stats.hitCount + "/" + stats.catchTotal + ")\n" +
-            "False Alarm Rate: " + Math.round(stats.falseAlarmRate * 100) + "% (" + stats.falseAlarmCount + "/" + stats.noncatchTotal + ")\n" +
-            "Hit-FA: " + Math.round(stats.correctedScore * 100) + "%\n\n此版本以 CSV 明細為主，請使用 Export Data (CSV)。");
+        const hitPct  = Math.round(stats.hitRate * 100);
+        const faPct   = Math.round(stats.falseAlarmRate * 100);
+        const hmfaPct = Math.round(stats.correctedScore * 100);
+        const hmfaEl = document.getElementById("hitMinusFAValue");
+        if (hmfaEl) hmfaEl.textContent = hmfaPct + "%";
+        const tbody = document.getElementById("detectionStatsBody");
+        if (tbody) {
+            tbody.innerHTML = [
+                ["命中率（Hit Rate）",      hitPct  + "%", stats.hitCount      + " / " + stats.catchTotal   + " catch trials"],
+                ["虛報率（False Alarm）",    faPct   + "%", stats.falseAlarmCount + " / " + stats.noncatchTotal + " noncatch trials"],
+                ["校正分（Hit − FA）",       hmfaPct + "%", ""]
+            ].map(function(r) {
+                return "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] + "</td></tr>";
+            }).join("");
+        }
+        const container = document.getElementById("resultsContainer");
+        if (container) container.style.display = "block";
     };
     window.backToExperiment = function () { document.getElementById("resultsContainer").style.display = "none"; };
     window.window_onload = window_onload;
