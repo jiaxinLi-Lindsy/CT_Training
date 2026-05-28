@@ -1888,11 +1888,14 @@ function testEmailSending() {
             total_trials: trialRecords.length,
             total_reversals: NumberOfReversals || 0,
             jnd_value: "TEST - Data may be incomplete",
-            accuracy: "TEST",
+            accuracy: hmfaPercent + "% (Hit-FA)",
+            hit_rate: hitPercent + "%",
+            false_alarm_rate: faPercent + "%",
+            hit_minus_fa: hmfaPercent + "%",
             mean_rt: "TEST",
             attachment_name: fileName,
             attachment_content: csvBase64,
-            results_summary: "ACC (Hit_Minus_FA): " + hmfaPercent + "%"
+            results_summary: "Hit: " + hitPercent + "% | FA: " + faPercent + "% | Hit-FA: " + hmfaPercent + "%"
         };
         
         const serviceId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.serviceId) || 'service_exe9d5a';
@@ -2408,6 +2411,21 @@ function displayExperimentProgress() {
                 log("Email service unavailable; cannot auto-send or auto-navigate.");
             }
         }
+
+        // 兜底跳转：若序列存在但邮件回调未触发，仍自动进入下一个任务
+        try {
+            const experimentSequence = JSON.parse(localStorage.getItem("experimentSequence") || "[]");
+            const experimentFiles = JSON.parse(localStorage.getItem("experimentFiles") || "[]");
+            if (experimentSequence.length > 0 && experimentFiles.length > 0 && typeof checkAndNavigateToNextExperiment === "function") {
+                setTimeout(function() {
+                    checkAndNavigateToNextExperiment();
+                }, 4000);
+            } else {
+                log("No experiment sequence found; stay on current page.");
+            }
+        } catch (e) {
+            log("Failed to parse experiment sequence: " + e.message);
+        }
     }
 
     function ensureParticipantInfo() {
@@ -2515,9 +2533,13 @@ function displayExperimentProgress() {
             start_time: window.experimentStartTime || localStorage.getItem("experimentStartTime_CT_Rising_Mid") || localStorage.getItem("experimentStartTime") || "N/A",
             completion_date: new Date().toLocaleString("zh-CN"),
             total_trials: trialRecords.length,
+            accuracy: hmfaPercent + "% (Hit-FA)",
+            hit_rate: hitPercent + "%",
+            false_alarm_rate: faPercent + "%",
+            hit_minus_fa: hmfaPercent + "%",
             attachment_name: `${participant}_Session${session}_CT_Rising_Mid.csv`,
             attachment_content: csvBase64,
-            results_summary: "ACC (Hit_Minus_FA): " + hmfaPercent + "%"
+            results_summary: "Hit: " + hitPercent + "% | FA: " + faPercent + "% | Hit-FA: " + hmfaPercent + "%"
         };
         const serviceId = (typeof EMAIL_CONFIG !== "undefined" && EMAIL_CONFIG.serviceId) || "service_exe9d5a";
         const templateId = (typeof EMAIL_CONFIG !== "undefined" && EMAIL_CONFIG.templateId) || "template_4c3g3ss";

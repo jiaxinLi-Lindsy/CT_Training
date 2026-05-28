@@ -34,19 +34,25 @@ const EMAIL_CONFIG = {
  *    - 使用以下模板内容：
  * 
  *    主题 (Subject):
- *    实验结果 - {{experiment_type}} - {{completion_date}}
+ *    实验结果 - {{participant_id}} - Session {{session_number}} - {{experiment_type}} - {{completion_date}}
  * 
  *    内容 (Content):
  *    您好，
  *    
  *    以下是实验结果的详细信息：
  *    
+ *    被试 ID：{{participant_id}}
+ *    训练场次：{{session_number}}
  *    实验类型：{{experiment_type}}
+ *    开始时间：{{start_time}}
  *    完成时间：{{completion_date}}
  *    总试验次数：{{total_trials}}
- *    总反转次数：{{total_reversals}}
- *    JND 值：{{jnd_value}}
- *    准确率：{{accuracy}}
+ *    
+ *    ── 成绩摘要 ──
+ *    命中率（Hit Rate）：{{hit_rate}}
+ *    虚报率（False Alarm Rate）：{{false_alarm_rate}}
+ *    校正分（Hit - FA）：{{hit_minus_fa}}
+ *    准确率（Accuracy）：{{accuracy}}
  *    平均反应时间：{{mean_rt}}
  *    
  *    结果摘要：
